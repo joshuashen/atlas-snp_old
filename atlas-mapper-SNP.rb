@@ -178,15 +178,15 @@ File.new(optHash["--crossmatch"],'r').each do |line|
     #    compute(query,s,e)
     span << [s,e]
     
-	elsif flag > 0 and line=~ /^\s(\S+)\s+(\d+)\s+(\S+)\((\d+)\)\s+(\d+)\s+(\S+)/
+  elsif flag > 0 and line=~ /^\s(\S+)\s+(\d+)\s+(\S+)\((\d+)\)\s+(\d+)\s+(\S+)/
     type, qplace, tplace = $1, $2.to_i, $5.to_i
     ii = $3
-		qual = $4
+    qual = $4
     env = $6
-		
-		if dir == '-' 
-			ii = $basechange[ii]
-		end
+    
+    if dir == '-' 
+      ii = $basechange[ii]
+    end
     if type =~ /^D/
       # deletion on read      
       block = 1
@@ -195,10 +195,10 @@ File.new(optHash["--crossmatch"],'r').each do |line|
       end
       
       tstart = tplace
-			if dir == '-'  #
+      if dir == '-'  #
         tstart = tstart - block + 1
       end
- 
+      
       tend = tstart + block
       span << [tstart + offset, tend + offset]
     elsif type =~ /^I/
@@ -207,13 +207,13 @@ File.new(optHash["--crossmatch"],'r').each do |line|
       span << [tstart + offset, tend + offset]
     elsif type =~ /^S/ # substitution
       tstart = tplace + offset
-			next if ii == 'N'
-			dist = qsize - qplace 
-			$snp[ref] = {} unless $snp.key?(ref)
-			$snp[ref][tstart] = '' unless $snp[ref].key?(tstart)
-			$snp[ref][tstart] << "#{ii}(#{qual})#{query}(#{dist})(#{score}/#{qsize})#{dir}#{env} "
+      next if ii == 'N'
+      dist = qsize - qplace 
+      $snp[ref] = {} unless $snp.key?(ref)
+      $snp[ref][tstart] = '' unless $snp[ref].key?(tstart)
+      $snp[ref][tstart] << "#{ii}(#{qual})#{query}(#{dist})(#{score}/#{qsize})#{dir}#{env} "
     end
-	end
+  end
 end
 compute(query,ref,span)
 
@@ -221,44 +221,44 @@ compute(query,ref,span)
 snpout = File.new(optHash["--output"]+".SNP.list", 'w')
 snpout.puts "refName\tcoordinate\trefBase\thomopolymer\trefEnv\tcoverage\tSNPBase\tadjustedQual\toriQual\tnumVariant\tnumAlter\treads_info.."
 $snp.keys.sort.each do |ref|
-	$snp[ref].keys.sort.each do |pos|
-		bases = {}
-		t = 0
-		$snp[ref][pos].split(/\s+/).each do |r|
-			if r=~ /^(\S)\((\d+)\)(\S+)\((\d+)\)\((\S+)\/(\d+)\)/
-				base = $1
-				rname = $3
-				t += 1
-				if !bases.key?(base)
-					bases[base] = {}
-					bases[base][:adjQual] = 0
-					bases[base][:oriQual] = 0
-					bases[base][:num] = 0
-				end
-				bases[base][:num] += 1
-				phredQual = $2.to_i
-				bases[base][:oriQual] += phredQual
-				dist = $4.to_i
-				qsize = $6.to_i
-				
-				if dist < 100 
-					adjqual1 = [phredQual - ( (100 - dist) * $slope ),0].max
-				else
-					adjqual1 = phredQual
-				end
-				bases[base][:adjQual] += adjqual1
-			end
-		end
-		array = bases.keys.sort {|a,b| bases[b][:num] <=> bases[a][:num]}
-	#  alternative  = array.size - 1
-		qual = bases[array[0]][:adjQual]
-		oriqual = bases[array[0]][:oriQual]
-		num = bases[array[0]][:num]
-		refBase = $seq[ref][pos-1,1]
-		refEnv = $seq[ref][pos-7,13]
-		homonum = homocount(refEnv)
-		snpout.puts "#{ref}\t#{pos}\t#{refBase}\t#{homonum}\t#{refEnv}\t#{$coverage[ref][pos]}\t#{array[0]}\t#{qual}\t#{oriqual}\t#{num}\t#{t}\t#{$snp[ref][pos]}"
-	end
+  $snp[ref].keys.sort.each do |pos|
+    bases = {}
+    t = 0
+    $snp[ref][pos].split(/\s+/).each do |r|
+      if r=~ /^(\S)\((\d+)\)(\S+)\((\d+)\)\((\S+)\/(\d+)\)/
+        base = $1
+        rname = $3
+        t += 1
+        if !bases.key?(base)
+          bases[base] = {}
+          bases[base][:adjQual] = 0
+          bases[base][:oriQual] = 0
+          bases[base][:num] = 0
+        end
+        bases[base][:num] += 1
+        phredQual = $2.to_i
+        bases[base][:oriQual] += phredQual
+        dist = $4.to_i
+        qsize = $6.to_i
+        
+        if dist < 100 
+          adjqual1 = [phredQual - ( (100 - dist) * $slope ),0].max
+        else
+          adjqual1 = phredQual
+        end
+        bases[base][:adjQual] += adjqual1
+      end
+    end
+    array = bases.keys.sort {|a,b| bases[b][:num] <=> bases[a][:num]}
+    #  alternative  = array.size - 1
+    qual = bases[array[0]][:adjQual]
+    oriqual = bases[array[0]][:oriQual]
+    num = bases[array[0]][:num]
+    refBase = $seq[ref][pos-1,1]
+    refEnv = $seq[ref][pos-7,13]
+    homonum = homocount(refEnv)
+    snpout.puts "#{ref}\t#{pos}\t#{refBase}\t#{homonum}\t#{refEnv}\t#{$coverage[ref][pos]}\t#{array[0]}\t#{qual}\t#{oriqual}\t#{num}\t#{t}\t#{$snp[ref][pos]}"
+  end
 end
 snpout.close
 
@@ -270,11 +270,11 @@ $coverage.keys.sort.each do |ref|
   $coverage[ref].shift  # remove the first one
  # t = $coverage[ref].size / 5000
  # str = ''
- # 0.upto(t) do |i|
-    #		covout.puts $coverage[ref][i*5000, 5000].join(" ")
-    # str << "#{$coverage[ref].slice!(i*5000, 5000).join(" ")}\n"
- # end
- # covout.puts str
+  # 0.upto(t) do |i|
+  #		covout.puts $coverage[ref][i*5000, 5000].join(" ")
+  # str << "#{$coverage[ref].slice!(i*5000, 5000).join(" ")}\n"
+  # end
+  # covout.puts str
   covout.puts $coverage[ref]
   $coverage[ref]=nil
 end

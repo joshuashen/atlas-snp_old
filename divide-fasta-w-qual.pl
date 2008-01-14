@@ -56,6 +56,15 @@ if(!$opt_qual) {
 
 my $qual=$opt_fa.'.qual';
 
+if (!(-e $qual)) {
+    if ($opt_fa =~ /^(\S+)\.fa$/ || $opt_fa =~ /^(\S+)\.fna$/) {
+	my $ffa = $1;
+	$qual = $ffa.".qual";
+    }
+}
+
+
+
 open (IN, $qual) or die ("no $qual\n");
 
 $num=1;

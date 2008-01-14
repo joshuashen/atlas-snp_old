@@ -1,5 +1,3 @@
-#!/home/hgsc/bin/perl 
-
 use Getopt::Long;
 use vars qw/$opt_help $opt_source $opt_list $opt_name $opt_output $opt_qual/;
 use strict;
