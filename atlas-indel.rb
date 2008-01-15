@@ -24,7 +24,7 @@ end
 
 class Indel 
   attr_accessor :ref, :query, :tstart, :tend, :qstart, :qend, :dir,:sub, :dels,:ins,:envs, :type
-
+  
   def initialize(query, ref, qstart, qend, tstart, tend, dir,sub,dels,ins,l,envs,type)
     @query,@ref,@qstart,@qend, @tstart, @tend, @dir,@sub,@dels,@ins,@length,@envs,@type = query, ref, qstart, qend, tstart, tend, dir,sub,dels,ins,l,envs,type
   end
