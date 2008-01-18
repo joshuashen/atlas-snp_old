@@ -95,8 +95,6 @@ def compute(name, ref, span)
   end
 end
 
-
-
 if optHash.key?("--target")  # just compute the coverage of target regions
   File.new(optHash["--target"], "r").each do |line|
     if line=~ /^(\S+)\s+(\d+)\s+(\d+)/
