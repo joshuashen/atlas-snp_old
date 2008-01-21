@@ -177,7 +177,7 @@ $outlist.each_key do |readfile|
   #	$stderr.puts " #{readf4shell} vs #{reffile}"
   xm = `#{crossMatch} #{readf4shell}.fa #{reffile} -minscore #{$minscore} -raw -discrep_lists  2>/dev/null`
 #	$stderr.puts "#{crossMatch} #{readf4shell}.fa #{reffile} -minscore #{$minscore} -raw -discrep_lists  2>/dev/null"
-  xmo.puts xm.grep(/\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\(\d+\)|^\s[S|D|I]\S*\s+\d+\s+\S+\(\d+\)/)
+  xmo.puts xm.scan(/\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\(\d+\).*|^\s[S|D|I]\S*\s+\d+\s+\S+\(\d+\).*/)
 end
 
 xmo.close
