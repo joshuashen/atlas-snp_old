@@ -10,7 +10,7 @@ opts = GetoptLong.new(
     ["--reference", "-r", GetoptLong::REQUIRED_ARGUMENT],
     ["--minscore", "-m", GetoptLong::OPTIONAL_ARGUMENT],
     ["--maxsub", "-s", GetoptLong::OPTIONAL_ARGUMENT],
-    ["--maxindel", "-g", GetoptLong::OPTIONAL_ARGUMENT],
+#    ["--maxindel", "-g", GetoptLong::OPTIONAL_ARGUMENT],
     ["--cutoff", "-c", GetoptLong::OPTIONAL_ARGUMENT],
     ["--help", "-h", GetoptLong::NO_ARGUMENT]
 )
@@ -32,22 +32,17 @@ else
   $maxsub = 5.0
 end
 
-if optHash.key?("--maxindel")
-  $maxindel = optHash["--maxindel"].to_f
-else    
-  $maxindel = 5.0
-end
+# if optHash.key?("--maxindel")
+#  $maxindel = optHash["--maxindel"].to_f
+# else    
+#  $maxindel = 15.0
+# end
 
 if optHash.key?("--minscore")
   $minscore = optHash["--minscore"].to_f
 else
   $minscore = 24.0
 end
-
-
-
-
-
 
 $seq = {}
 
@@ -89,11 +84,6 @@ File.new(optHash["--reference"], "r").each do |line|
     $seq[ref] << line.chomp
   end
 end
-
-
-
-
-
 
 $indels = []
 
