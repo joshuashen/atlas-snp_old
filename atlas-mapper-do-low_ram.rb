@@ -56,7 +56,7 @@ end
 if optHash.key?("--cutoff")
 	$cutoff = optHash["--cutoff"].to_f
 else
-	$cutoff = 0.995
+  $cutoff = 0.995
 end 
 
 
@@ -80,7 +80,7 @@ $index = {}
 $reflist = {}
 $outlist  = {}
 
-tempDir = "Mapping_of_" + fa
+tempDir = File.dirname(File.expand_path(fa)) + "/Mapping_of_" + File.basename(fa)
 package = File.dirname(File.expand_path($0))
 
 # get absolute path for the reference file

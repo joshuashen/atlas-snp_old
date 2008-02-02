@@ -170,7 +170,7 @@ File.new(optHash["--crossmatch"],'r').each do |line|
     end
     if tstart > tend
       tstart, tend = tend, tstart  # wicked 
-			dir = '-'
+      dir = '-'
     end
     s = tstart + offset
     e = tend + offset
@@ -178,7 +178,7 @@ File.new(optHash["--crossmatch"],'r').each do |line|
     #    compute(query,s,e)
     span << [s,e]
     
-	elsif flag > 0 and line=~ /^\s(\S+)\s+(\d+)\s+(\S+)\((\d+)\)\s+(\d+)\s+(\S+)/
+  elsif flag > 0 and line=~ /^\s(\S+)\s+(\d+)\s+(\S+)\((\d+)\)\s+(\d+)\s+(\S+)/
     type, qplace, tplace = $1, $2.to_i, $5.to_i
     ii = $3
     qual = $4
