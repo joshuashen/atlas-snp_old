@@ -104,6 +104,15 @@ oocfile = envDir + "11mer.ooc"
 
 refs = `ls #{envDir}ref_divisions/div*fa`
 
+
+# clean dir
+system("rm -rf #{blatPsl}") if File.exist?(blatPsl)
+system("rm -rf #{blatPsl}.gz") if File.exist?(blatPsl + ".gz")
+
+if refs.length < 1 
+  refs = absref
+end
+
 refs.each do |refDivFa|
   refDivFa.chomp!
   pslf = "temp.psl"
@@ -170,6 +179,7 @@ Dir.chdir(xmDir)
 # do cross_match
 $stderr.puts "\nDoing cross_match"
 xmo = File.new(xmoutfile, 'w')
+
 
 $outlist.each_key do |readfile|
   oo = File.new(readfile, 'w')

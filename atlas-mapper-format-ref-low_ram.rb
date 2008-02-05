@@ -4,13 +4,12 @@
 
 ## TODO:
 # 1. consider circular genomes (microbes)
-# 2. [perhaps] split huge genomes, such human genome,into smaller pieces for blat, in order to run BLAT with <=2G RAM.
+# Done 2. [perhaps] split huge genomes, such human genome,into smaller pieces for blat, in order to run BLAT with <=2G RAM.
 
 require 'getoptlong'
 
 opts = GetoptLong.new(
     ["--reference", "-r", GetoptLong::REQUIRED_ARGUMENT],
-
     ["--length", "-l", GetoptLong::OPTIONAL_ARGUMENT],
     ["--freq","-f", GetoptLong::OPTIONAL_ARGUMENT],
     ["--blat", "-b", GetoptLong::OPTIONAL_ARGUMENT],
@@ -57,25 +56,51 @@ system("mkdir #{envDir}")
 ref = optHash["--reference"]
 oocOut = envDir + "/11mer.ooc"
 
-# generate ooc file
-#if !File.exist?(File.expand_path(blat))
-#	$stderr.puts "Cannot find blat"
-#	exit
-#end
+meta = File.new(envDir + "/meta.info", 'w')
+
+meta.puts "oocCut\t#{oocCut}"
+meta.puts "pieceLength\t#{pieceLength}"
+
 
 cmd = "#{blat} #{ref} /dev/null /dev/null -tileSize=#{kmer} -makeOoc=#{oocOut} -repMatch=#{oocCut}"
 system(cmd)
 
-# break the reference into 900000000 non-overlapping pieces 
-
-# divisions = envDir + "/divisions.index"
 
 divDir = envDir + "/ref_divisions/"
 
 system("mkdir #{divDir}")
 
-cmd = "perl #{package}/divide-fasta-w-qual.pl -f #{ref} -l 900000000 -p #{divDir}div"
-system(cmd)
+
+# split the reference into 900M pieces: so that BLAT jobs take less than 2.0G RAM
+files = []
+num = 1
+fo = divDir +'div_'+num.to_s+ '.fa'
+fout = File.new(fo, "w")
+files << fo
+seq = 0
+File.new(ref,'r').each do |line|
+  if line=~ /^>(\S+)/
+    if seq >= 900000000
+      seq = 0
+      fout.close
+      num += 1
+      fo = divDir +'div_'+num.to_s+ '.fa'
+      fout = File.new(fo, "w")
+      files << fo
+    end
+
+    fout.puts line
+  else
+    fout.puts line
+    seq+= line.chomp.size
+  end
+end
+
+fout.close
+
+files.each do |div|
+  meta.puts "division\t#{File.basename(div)}"
+end
 
 
 # break the reference into 100k overlapping pieces and store the information in an index file
@@ -135,7 +160,7 @@ def formatDB(name, seq, index)
       
       index[:refpiece] = index[:basedir] + "#{index[:layer]}" + '/' + 'piece_' + "#{index[:num]}" + '.fa'
       
-      $stderr.puts index[:refpiece]
+#      $stderr.puts index[:refpiece]
       
       index[:current] = File.new(index[:refpiece], 'w')
       ss = seq.slice(startco - 1, endco - startco + 1)
@@ -164,3 +189,5 @@ File.new(ref, 'r').each do |line|
 end
 formatDB(name, seq, $index)
 $index[:output].close
+
+meta.close
