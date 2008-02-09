@@ -242,7 +242,7 @@ if File.exist?(qualfile)
   end
 end
 
-str = ''
+# str = ''
 $outlist.each_key do |readfile|
 
   readf4shell = readfile.gsub('|', '\|')
@@ -250,11 +250,11 @@ $outlist.each_key do |readfile|
   reffile = $reflist[readfile].gsub('|', '\|')
   
   xm = `#{crossMatch} #{readf4shell}.fa #{reffile} -minscore #{$minscore} -raw -discrep_lists  2>/dev/null`
-#  xmo.puts xm.scan(/\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\(\d+\).*|^\s[S|D|I]\S*\s+\d+\s+\S+\(\d+\).*/)
+  xmo.puts xm.scan(/\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\(\d+\).*|^\s[S|D|I]\S*\s+\d+\s+\S+\(\d+\).*/)
 
-  str << xm.scan(/\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\(\d+\).*|^\s[S|D|I]\S*\s+\d+\s+\S+\(\d+\).*/).to_s + "\n"
+#  str << xm.scan(/\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\(\d+\).*|^\s[S|D|I]\S*\s+\d+\s+\S+\(\d+\).*/).to_s + "\n"
 
 end
-xmo.puts str
+#xmo.puts str
 xmo.close
 system("rm -rf #{xmDirabs}")
