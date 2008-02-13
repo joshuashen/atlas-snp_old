@@ -13,7 +13,8 @@ opts = GetoptLong.new(
     ["--oneOff", "-n", GetoptLong::OPTIONAL_ARGUMENT],
     ["--minIdentity", "-i", GetoptLong::OPTIONAL_ARGUMENT],
     ["--help", "-h", GetoptLong::NO_ARGUMENT],
-    ["--xmOnly", "-z", GetoptLong::NO_ARGUMENT]
+    ["--xmOnly", "-z", GetoptLong::NO_ARGUMENT],
+    ["--short", "-s", GetoptLong::NO_ARGUMENT]
 )
 
 optHash = {}
@@ -22,8 +23,8 @@ opts.each do |opt, arg|
 end
 
 if optHash.key?("--help") or !optHash.key?("--reference") or !optHash.key?("--query")
-  $stderr.puts "Usage: ruby __.rb -q query.fasta -r reference.fasta [-m minscore -c cutoff] [-b path_to_blat -x path_to_cross_match]  [-n 1 -i minIdentity_blat]"
-	$stderr.puts "  note: cutoff is the percentage for best hit cutoff, default 0.995"
+  $stderr.puts "Usage: ruby __.rb -q query.fasta -r reference.fasta [-m minscore -c cutoff] [-b path_to_blat -x path_to_cross_match]  [-n 1 -i minIdentity_blat] [-z] [--short]"
+  $stderr.puts "  note: cutoff is the percentage for best hit cutoff, default 0.995"
   exit
 end
 
@@ -248,8 +249,17 @@ $outlist.each_key do |readfile|
   readf4shell = readfile.gsub('|', '\|')
   
   reffile = $reflist[readfile].gsub('|', '\|')
-  
-  xm = `#{crossMatch} #{readf4shell}.fa #{reffile} -minscore #{$minscore} -raw -discrep_lists  2>/dev/null`
+
+  if optHash.key?("--short")
+    # for short reads
+    #  -bandwidth 6 -gap_init -2 -penalty -1 -gap_ext -1 -raw  -masklevel 101
+    xm = `#{crossMatch} #{readf4shell}.fa #{reffile} -minscore #{$minscore} -bandwidth 6 -gap_init -2 -penalty -1 -gap_ext -1 -raw  -masklevel 101 -discrep_lists  2>/dev/null`
+  else
+    xm = `#{crossMatch} #{readf4shell}.fa #{reffile} -minscore #{$minscore} -raw -discrep_lists  2>/dev/null`
+
+  end
+
+
   xmo.puts xm.scan(/\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\(\d+\).*|^\s[S|D|I]\S*\s+\d+\s+\S+\(\d+\).*/)
 
 #  str << xm.scan(/\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\(\d+\).*|^\s[S|D|I]\S*\s+\d+\s+\S+\(\d+\).*/).to_s + "\n"

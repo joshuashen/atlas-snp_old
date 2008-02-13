@@ -22,7 +22,7 @@ end
 if optHash.key?("--output")
   prefix = optHash["--output"]
 else
-  prefix = optHash["--target"]
+  prefix = optHash["--input"]
 end
 
 $ranges = {} # store the genomic locations of all genes
