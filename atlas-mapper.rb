@@ -14,6 +14,7 @@ opts = GetoptLong.new(
     ["--minIdentity", "-i", GetoptLong::OPTIONAL_ARGUMENT],
     ["--help", "-h", GetoptLong::NO_ARGUMENT],
     ["--xmOnly", "-z", GetoptLong::NO_ARGUMENT],
+    ["--blatOnly","-a", GetoptLong::NO_ARGUMENT],
     ["--short", "-s", GetoptLong::NO_ARGUMENT]
 )
 
@@ -23,8 +24,10 @@ opts.each do |opt, arg|
 end
 
 if optHash.key?("--help") or !optHash.key?("--reference") or !optHash.key?("--query")
-  $stderr.puts "Usage: ruby __.rb -q query.fasta -r reference.fasta [-m minscore -c cutoff] [-b path_to_blat -x path_to_cross_match]  [-n 1 -i minIdentity_blat] [-z] [--short]"
+  $stderr.puts "Usage: ruby __.rb -q query.fasta -r reference.fasta [-m minscore -c cutoff] [-b path_to_blat -x path_to_cross_match]  [-n 1 -i minIdentity_blat] [-z] [--short] [-a]"
   $stderr.puts "  note: cutoff is the percentage for best hit cutoff, default 0.995"
+  $stderr.puts "        -a   run blat and blat parsing only -- skip the cross_match step"
+  $stderr.puts "        -z   run cross_match only -- must run with -a first in a separate step.   The -a and -z options are useful to separate the two steps for logistical reasons."
   exit
 end
 
@@ -131,10 +134,13 @@ if !optHash.key?("--xmOnly")
     refDivFa = envDir + "ref_divisions/" + refdiv
     #   refDivFa.chomp!
     pslf = "temp.psl"
-    cmd = "#{blat} #{refDivFa} #{absquery} -ooc=#{oocfile} -oneOff=#{$oneOff} -minIdentity=#{$minIdentity} #{pslf}"
-    
+
+## for some unknown reason, blat -oneOff=0 doesn't work in the way as described, it's much slower than without this option. 
+#    cmd = "#{blat} #{refDivFa} #{absquery} -ooc=#{oocfile} -oneOff=#{$oneOff} -minIdentity=#{$minIdentity} #{pslf}"
+    cmd = "#{blat} #{refDivFa} #{absquery} -ooc=#{oocfile} -minIdentity=#{$minIdentity}  #{pslf}"
     $stderr.puts cmd
     system(cmd)
+    $stderr.puts " .. done"
     system("cat #{pslf} >> #{blatPsl} ")
     system("rm -rf #{pslf}")
   end
@@ -149,6 +155,11 @@ if !optHash.key?("--xmOnly")
     Process.fork { system("gzip #{blatPsl}"); }
   end
 end
+
+if optHash.key?("--blatOnly")
+  exit
+end
+
 
 
 # reading the ref environment 
