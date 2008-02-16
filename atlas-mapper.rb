@@ -203,8 +203,8 @@ system("mkdir #{xmDir}")
 xmDirabs = File.expand_path(xmDir)
 Dir.chdir(xmDir)
 
-# do cross_match
-$stderr.puts "\nDoing cross_match"
+$stderr.puts "Distribute read sequences"
+
 xmo = File.new(xmoutfile, 'w')
 
 def readFasta(ff, str)
@@ -254,7 +254,9 @@ if File.exist?(qualfile)
   end
 end
 
-# str = ''
+$stderr.puts "\nDoing cross_match"
+str = ''
+# xm= ''
 $outlist.each_key do |readfile|
 
   readf4shell = readfile.gsub('|', '\|')
@@ -264,18 +266,20 @@ $outlist.each_key do |readfile|
   if optHash.key?("--short")
     # for short reads
     #  -bandwidth 6 -gap_init -2 -penalty -1 -gap_ext -1 -raw  -masklevel 101
-    xm = `#{crossMatch} #{readf4shell}.fa #{reffile} -minscore #{$minscore} -bandwidth 6 -gap_init -2 -penalty -1 -gap_ext -1 -raw  -masklevel 101 -discrep_lists  2>/dev/null`
+    str <<  `#{crossMatch} #{readf4shell}.fa #{reffile} -minscore #{$minscore} -bandwidth 6 -gap_init -2 -penalty -1 -gap_ext -1 -raw  -masklevel 101 -discrep_lists  2>/dev/null`
   else
-    xm = `#{crossMatch} #{readf4shell}.fa #{reffile} -minscore #{$minscore} -raw -discrep_lists  2>/dev/null`
+    str << `#{crossMatch} #{readf4shell}.fa #{reffile} -minscore #{$minscore} -raw -discrep_lists 2>/dev/null`
+ 
+#    xm  = `#{crossMatch} #{readf4shell}.fa #{reffile} -minscore #{$minscore} -raw -discrep_lists 2>/dev/null`
 
+    $stderr.puts "done with #{readf4shell}.fa "
   end
 
 
-  xmo.puts xm.scan(/\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\(\d+\).*|^\s[S|D|I]\S*\s+\d+\s+\S+\(\d+\).*/)
-
-#  str << xm.scan(/\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\(\d+\).*|^\s[S|D|I]\S*\s+\d+\s+\S+\(\d+\).*/).to_s + "\n"
+#  xmo.puts xm.scan(/\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\(\d+\).*|^\s[S|D|I]\S*\s+\d+\s+\S+\(\d+\).*/)
 
 end
-#xmo.puts str
+xmo.puts str.scan(/\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\(\d+\).*|^\s[S|D|I]\S*\s+\d+\s+\S+\(\d+\).*/)
+
 xmo.close
 system("rm -rf #{xmDirabs}")
