@@ -15,6 +15,7 @@ opts = GetoptLong.new(
     ["--help", "-h", GetoptLong::NO_ARGUMENT],
     ["--xmOnly", "-z", GetoptLong::NO_ARGUMENT],
     ["--blatOnly","-a", GetoptLong::NO_ARGUMENT],
+    ["--noparse","-e", GetoptLong::NO_ARGUMENT],
     ["--short", "-s", GetoptLong::NO_ARGUMENT]
 )
 
@@ -136,8 +137,11 @@ if !optHash.key?("--xmOnly")
     pslf = "temp.psl"
 
 ## for some unknown reason, blat -oneOff=0 doesn't work in the way as described, it's much slower than without this option. 
-#    cmd = "#{blat} #{refDivFa} #{absquery} -ooc=#{oocfile} -oneOff=#{$oneOff} -minIdentity=#{$minIdentity} #{pslf}"
-    cmd = "#{blat} #{refDivFa} #{absquery} -ooc=#{oocfile} -minIdentity=#{$minIdentity}  #{pslf}"
+    if $oneOff == 1
+      cmd = "#{blat} #{refDivFa} #{absquery} -ooc=#{oocfile} -oneOff=#{$oneOff} -minIdentity=#{$minIdentity} #{pslf}"
+    else
+      cmd = "#{blat} #{refDivFa} #{absquery} -ooc=#{oocfile} -minIdentity=#{$minIdentity}  #{pslf}"
+    end
     $stderr.puts cmd
     system(cmd)
     $stderr.puts " .. done"
@@ -146,10 +150,11 @@ if !optHash.key?("--xmOnly")
   end
 
   # get best hit
-  $stderr.puts "\nPicking best hits"
-  cmd = "ruby #{package}/pick_best_hits_from_BLAT_psl.rb #{blatPsl} #{$cutoff} > #{bestHits}"
-  system(cmd)
-  
+  if !optHash.key?("--noparse")
+    $stderr.puts "\nPicking best hits"
+    cmd = "ruby #{package}/pick_best_hits_from_BLAT_psl.rb #{blatPsl} #{$cutoff} > #{bestHits}"
+    system(cmd)
+  end
 # could be forked to a new process
   if !File.exist?(blatPsl + '.gz')
     Process.fork { system("gzip #{blatPsl}"); }

@@ -7,6 +7,7 @@ require 'getoptlong'
 
 opts = GetoptLong.new(
     ["--crossmatch", "-x", GetoptLong::REQUIRED_ARGUMENT],
+    ["--output", "-o", GetoptLong::OPTIONAL_ARGUMENT],
     ["--reference", "-r", GetoptLong::OPTIONAL_ARGUMENT],
     ["--target", "-t", GetoptLong::OPTIONAL_ARGUMENT],
     ["--minscore", "-m", GetoptLong::OPTIONAL_ARGUMENT],
@@ -22,11 +23,17 @@ opts.each do |opt, arg|
 end
 
 if optHash.key?("--help") or (!optHash.key?("--reference") && !optHash.key?("--target") )
-  $stderr.puts "Usage: ruby __.rb -x cross_match.output [-r ref.fasta] [ -t targeted_genomic_regions ] [ options ]"
+  $stderr.puts "Usage: ruby __.rb -x cross_match.output  -o prefix_of_output [-r ref.fasta] [ -t targeted_genomic_regions ] [ options ]"
   $stderr.puts "    Note: either -r or -t is required "
   $stderr.puts "    Options: "
   $stderr.puts "          -m  -s -g "
   exit
+end
+
+if optHash.key?("--output")
+  $prefix = optHash["--output"]
+else
+  $prefix =  optHash["--crossmatch"]   + "_Coverage"
 end
 
 if optHash.key?("--maxsub")
@@ -60,10 +67,11 @@ $coverage = {}
 
 $seq = {}
 
+$feature = Hash.new {|h,k| h[k] = Hash.new }
 
 def initCov(ref, s, e)
   $coverage[ref] = {} unless $coverage.key?(ref)
-  
+  $stderr.puts "#{ref}\t#{s}\t#{e}"
   (s..e).each do |i|
     $coverage[ref][i] = 0
   end
@@ -97,8 +105,9 @@ end
 
 if optHash.key?("--target")  # just compute the coverage of target regions
   File.new(optHash["--target"], "r").each do |line|
-    if line=~ /^(\S+)\s+(\d+)\s+(\d+)/
-      ref,s,e = $1,$2.to_i, $3.to_i
+    if line=~ /^(\S+)\s+(\S+)\s+(\d+)\s+(\d+)/
+      featurename, ref,s,e = $1,$2, $3.to_i, $4.to_i
+      $feature[ref][featurename] = [s,e]
       initCov(ref,s,e)
     end
   end
@@ -190,29 +199,167 @@ File.new(optHash["--crossmatch"],'r').each do |line|
 end
 compute(query,ref,span)
 
+
+
+refout = File.new($prefix + '.reference_base_cov', "w")
+
+
 $coverage.keys.sort.each do |ref|
-  puts ">#{ref}"
- # $coverage[ref].shift  # remove the first one                                                       
-  # t = $coverage[ref].size / 5000                                                                                    
- # str = ''                                                                                                          
- # 0.upto(t) do |i|                                                                                                  
-    #           covout.puts $coverage[ref][i*5000, 5000].join(" ")                                                   
-  # str << "#{$coverage[ref].slice!(i*5000, 5000).join(" ")}\n"                                                    
- # end                                                                                                               
- # covout.puts str          
+  refout.puts ">#{ref}"
   $coverage[ref].keys.sort {|a,b| a<=>b}.each do |i|
-    puts "#{i}\t#{$coverage[ref][i]}"
-    
+    refout.puts "#{i}\t#{$coverage[ref][i]}"
   end
-  #  $coverage[ref]=nil
+
 end
 
-# average depth-cov and completeness
+refout.close
 
+refsum = File.new($prefix + ".reference_summary", "w")
 $coverage.each_key do |ref|
   tb = $coverage[ref].size
   cc = $coverage[ref].values.select {|i| i>0 }.size
-  
-  $stderr.puts "#{ref}\t#{tb}\t#{cc}"
+
+  refsum.puts "#{ref}\t#{tb}\t#{cc}"
 end
+
+refsum.close
+
+## statistics
+
+module Math
+  module Statistics
+    def self.append_features(mod)
+      unless mod < Enumerable
+        raise TypeError, 
+        "`#{self}' can't be included non Enumerable (#{mod})"
+      end
+      
+      def mod.default_block= (blk)
+        self.const_set("STAT_BLOCK", blk)
+      end
+      
+      def mod.default_block
+        defined?(self::STAT_BLOCK) && self::STAT_BLOCK
+      end
+      
+      super
+    end
+    
+    def default_block
+      @stat_block || self.class.default_block
+    end
+    
+    def default_block=(blk)
+      @stat_block = blk
+    end
+    
+    def sum
+      sum = 0.0
+      if block_given?
+        each{|i| sum += yield(i)}
+      elsif default_block
+        each{|i| sum += default_block[*i]}
+      else
+        each{|i| sum += i}
+      end
+      sum
+    end
+    
+    def average(&blk)
+      sum(&blk)/size
+    end
+    
+    
+    def variance(&blk)
+      sum2 = if block_given?
+               sum{|i| j=yield(i); j*j}
+             elsif default_block
+               sum{|i| j=default_block[*i]; j*j}
+             else
+               sum{|i| i**2}
+             end
+      sum2/size - average(&blk)**2
+    end
+    
+    def standard_deviation(&blk)
+      Math::sqrt(variance(&blk))
+    end
+
+    
+    def Min(&blk)
+      if block_given?
+        if min = find{|i| i}
+          min = yield(min)
+          each{|i|
+            j = yield(i)
+            min = j if min > j
+          }
+          min
+        end
+      elsif default_block
+        if min = find{|i| i}
+          min = default_block[*min]
+          each{|i|
+            j = default_block[*i]
+            min = j if min > j
+          }
+          min
+        end
+      else
+        min()
+      end
+    end
+    
+    def Max(&blk)
+      if block_given?
+        if max = find{|i| i}
+          max = yield(max)
+          each{|i|
+            j = yield(i)
+            max = j if max < j
+          }
+          max
+        end
+      elsif default_block
+        if max = find{|i| i}
+          max = default_block[*max]
+          each{|i|
+            j = default_block[*i]
+            max = j if max > j
+          }
+          max
+        end
+      else
+        max()
+      end
+    end
+    
+    alias avg average
+    alias std standard_deviation
+    alias var variance
+  end
+end
+
+
+class Array
+  include Math::Statistics
+end
+
+
+if optHash.key?("--target")
+  tout = File.new($prefix + ".target_summary", "w")
+
+  $feature.each_key do |ref|
+    $feature[ref].each_key do |ff|
+      s, e = $feature[ref][ff]
+
+      cova = $coverage[ref].reject {|p, c| p <  s-1 or p > e - 1}.values   
+      avg = cova.average
+      stderr = cova.std
+      tout.puts "#{ff}\t#{ref}\t#{s}\t#{e}\t#{avg}\t#{stderr}"
+    end
+  end
+  tout.close
+end
+
 
