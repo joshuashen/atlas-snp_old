@@ -71,7 +71,7 @@ $feature = Hash.new {|h,k| h[k] = Hash.new }
 
 def initCov(ref, s, e)
   $coverage[ref] = {} unless $coverage.key?(ref)
-  $stderr.puts "#{ref}\t#{s}\t#{e}"
+ #  $stderr.puts "#{ref}\t#{s}\t#{e}"
   (s..e).each do |i|
     $coverage[ref][i] = 0
   end
@@ -205,9 +205,9 @@ refout = File.new($prefix + '.reference_base_cov', "w")
 
 
 $coverage.keys.sort.each do |ref|
-  refout.puts ">#{ref}"
+##  refout.puts ">#{ref}"
   $coverage[ref].keys.sort {|a,b| a<=>b}.each do |i|
-    refout.puts "#{i}\t#{$coverage[ref][i]}"
+    refout.puts "#{ref}\t#{i}\t#{$coverage[ref][i]}"
   end
 
 end
