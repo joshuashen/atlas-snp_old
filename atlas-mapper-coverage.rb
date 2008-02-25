@@ -224,6 +224,9 @@ end
 
 refsum.close
 
+
+
+
 ## statistics
 
 module Math
@@ -347,6 +350,25 @@ end
 
 
 if optHash.key?("--target")
+
+	tbasecov = File.new($prefix + ".target_base_cov", "w")
+
+	$feature.each_key do |ref|
+		$feature[ref].keys.sort.each do |ff|
+			s ,e = $feature[ref][ff]
+			$coverage[ref].keys.select {|i| i>= s -1 and i <= e -1}.sort.each do |j|
+				tbasecov.puts "#{ff}\t#{$coverage[ref][j]}\t#{ref}\t#{j}"
+			end
+		end
+	end
+	##  refout.puts ">#{ref}"
+#  $coverage[ref].keys.sort {|a,b| a<=>b}.each do |i|
+#    refout.puts "#{ref}\t#{i}\t#{$coverage[ref][i]}"
+#  end
+	tbasecov.close
+	
+
+
   tout = File.new($prefix + ".target_summary", "w")
 
   $feature.each_key do |ref|
