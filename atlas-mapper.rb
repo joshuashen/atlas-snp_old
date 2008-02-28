@@ -7,11 +7,12 @@ opts = GetoptLong.new(
     ["--query", "-q", GetoptLong::REQUIRED_ARGUMENT],
 #    ["--output", "-o", GetoptLong::OPTIONAL_ARGUMENT],
     ["--minscore", "-m", GetoptLong::OPTIONAL_ARGUMENT],
-		["--cutoff", "-c", GetoptLong::OPTIONAL_ARGUMENT],
-		["--blat", "-b", GetoptLong::OPTIONAL_ARGUMENT],
-		["--crossmatch", "-x", GetoptLong::OPTIONAL_ARGUMENT],
+    ["--cutoff", "-c", GetoptLong::OPTIONAL_ARGUMENT],
+    ["--blat", "-b", GetoptLong::OPTIONAL_ARGUMENT],
+    ["--crossmatch", "-x", GetoptLong::OPTIONAL_ARGUMENT],
     ["--oneOff", "-n", GetoptLong::OPTIONAL_ARGUMENT],
     ["--minIdentity", "-i", GetoptLong::OPTIONAL_ARGUMENT],
+    ["--masklevel", "-l", GetoptLong::OPTIONAL_ARGUMENT],
     ["--help", "-h", GetoptLong::NO_ARGUMENT],
     ["--xmOnly", "-z", GetoptLong::NO_ARGUMENT],
     ["--blatOnly","-a", GetoptLong::NO_ARGUMENT],
@@ -36,31 +37,49 @@ fa = optHash["--query"]
 reffa = optHash["--reference"]
 
 if optHash.key?("--oocCut")
-	oocCut = optHash["--oocCut"].to_i
+  oocCut = optHash["--oocCut"].to_i
 else
-	oocCut = 1024
+  oocCut = 1024
 end
 
 if optHash.key?("--blat")
-	blat = File.expand_path(optHash["--blat"])
+  blat = File.expand_path(optHash["--blat"])
 else
-	blat = "blat"
+  blat = "blat"
 end
 
 if optHash.key?("--crossmatch")
-	crossMatch = File.expand_path(optHash["--crossmatch"])
+  crossMatch = File.expand_path(optHash["--crossmatch"])
 else
-	crossMatch = "cross_match"
+  crossMatch = "cross_match"
+end
+
+# from cross_match document:
+# -masklevel 80         
+# (cross_match only). A match is reported only if at least (100 -
+# masklevel)% of the bases in its "domain" (the part of the query that
+# is aligned) are not contained within the domain of any higher-scoring
+# match.
+# Special cases:
+#    -masklevel 0     report only the single highest scoring match for each query 
+#    -masklevel 100   report any match whose domain is not completely contained
+#                         within a higher scoring match
+#    -masklevel 101   report all matches
+
+if optHash.key?("--masklevel")
+  $masklevel = optHash["--masklevel"]
+else
+  $masklevel = 20
 end
 
 if optHash.key?("--minscore")
-	$minscore = optHash["--minscore"].to_i
+  $minscore = optHash["--minscore"].to_i
 else
-	$minscore = 24
+  $minscore = 30
 end
 
 if optHash.key?("--cutoff")
-	$cutoff = optHash["--cutoff"].to_f
+  $cutoff = optHash["--cutoff"].to_f
 else
   $cutoff = 0.995
 end 
@@ -267,22 +286,16 @@ $outlist.each_key do |readfile|
   readf4shell = readfile.gsub('|', '\|')
   
   reffile = $reflist[readfile].gsub('|', '\|')
-
+  
   if optHash.key?("--short")
     # for short reads
     #  -bandwidth 6 -gap_init -2 -penalty -1 -gap_ext -1 -raw  -masklevel 101
     str <<  `#{crossMatch} #{readf4shell}.fa #{reffile} -minscore #{$minscore} -bandwidth 6 -gap_init -2 -penalty -1 -gap_ext -1 -raw  -masklevel 101 -discrep_lists  2>/dev/null`
   else
-    str << `#{crossMatch} #{readf4shell}.fa #{reffile} -minscore #{$minscore} -raw -discrep_lists 2>/dev/null`
+    str << `#{crossMatch} #{readf4shell}.fa #{reffile} -minscore #{$minscore} -masklevel #{$masklevel} -raw -discrep_lists 2>/dev/null`
  
-#    xm  = `#{crossMatch} #{readf4shell}.fa #{reffile} -minscore #{$minscore} -raw -discrep_lists 2>/dev/null`
-
-    $stderr.puts "done with #{readf4shell}.fa "
+    #    $stderr.puts "done with #{readf4shell}.fa "
   end
-
-
-#  xmo.puts xm.scan(/\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\(\d+\).*|^\s[S|D|I]\S*\s+\d+\s+\S+\(\d+\).*/)
-
 end
 xmo.puts str.scan(/\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\(\d+\).*|^\s[S|D|I]\S*\s+\d+\s+\S+\(\d+\).*/)
 

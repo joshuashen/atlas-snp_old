@@ -27,6 +27,9 @@ if optHash.key?("--help") or (!optHash.key?("--reference") && !optHash.key?("--t
   $stderr.puts "    Note: either -r or -t is required "
   $stderr.puts "    Options: "
   $stderr.puts "          -m  -s -g "
+  $stderr.puts "\n The format of target regions: "
+  $stderr.puts " target_name\treference_name\tstart_on_ref\tend_on_ref\tdirection(1 or -1)"
+
   exit
 end
 
@@ -105,9 +108,9 @@ end
 
 if optHash.key?("--target")  # just compute the coverage of target regions
   File.new(optHash["--target"], "r").each do |line|
-    if line=~ /^(\S+)\s+(\S+)\s+(\d+)\s+(\d+)/
-      featurename, ref,s,e = $1,$2, $3.to_i, $4.to_i
-      $feature[ref][featurename] = [s,e]
+    if line=~ /^(\S+)\s+(\S+)\s+(\d+)\s+(\d+)\s+(\S+)/
+      featurename, ref,s,e,dir = $1,$2, $3.to_i, $4.to_i, $5.to_i
+      $feature[ref][featurename] = [s,e,dir]
       initCov(ref,s,e)
     end
   end
@@ -200,19 +203,22 @@ end
 compute(query,ref,span)
 
 
+######### OUTPUT
 
-refout = File.new($prefix + '.reference_base_cov', "w")
-
-
-$coverage.keys.sort.each do |ref|
-##  refout.puts ">#{ref}"
-  $coverage[ref].keys.sort {|a,b| a<=>b}.each do |i|
-    refout.puts "#{ref}\t#{i}\t#{$coverage[ref][i]}"
+if optHash.key?("--reference")
+  refout = File.new($prefix + '.reference_base_cov', "w")
+  
+  
+  $coverage.keys.sort.each do |ref|
+    ##  refout.puts ">#{ref}"
+    $coverage[ref].keys.sort {|a,b| a<=>b}.each do |i|
+      refout.puts "#{ref}\t#{i}\t#{$coverage[ref][i]}"
+    end
+    
   end
-
+  
+  refout.close
 end
-
-refout.close
 
 refsum = File.new($prefix + ".reference_summary", "w")
 $coverage.each_key do |ref|
@@ -225,163 +231,46 @@ end
 refsum.close
 
 
-
-
-## statistics
-
-module Math
-  module Statistics
-    def self.append_features(mod)
-      unless mod < Enumerable
-        raise TypeError, 
-        "`#{self}' can't be included non Enumerable (#{mod})"
-      end
-      
-      def mod.default_block= (blk)
-        self.const_set("STAT_BLOCK", blk)
-      end
-      
-      def mod.default_block
-        defined?(self::STAT_BLOCK) && self::STAT_BLOCK
-      end
-      
-      super
-    end
-    
-    def default_block
-      @stat_block || self.class.default_block
-    end
-    
-    def default_block=(blk)
-      @stat_block = blk
-    end
-    
-    def sum
-      sum = 0.0
-      if block_given?
-        each{|i| sum += yield(i)}
-      elsif default_block
-        each{|i| sum += default_block[*i]}
-      else
-        each{|i| sum += i}
-      end
-      sum
-    end
-    
-    def average(&blk)
-      sum(&blk)/size
-    end
-    
-    
-    def variance(&blk)
-      sum2 = if block_given?
-               sum{|i| j=yield(i); j*j}
-             elsif default_block
-               sum{|i| j=default_block[*i]; j*j}
-             else
-               sum{|i| i**2}
-             end
-      sum2/size - average(&blk)**2
-    end
-    
-    def standard_deviation(&blk)
-      Math::sqrt(variance(&blk))
-    end
-
-    
-    def Min(&blk)
-      if block_given?
-        if min = find{|i| i}
-          min = yield(min)
-          each{|i|
-            j = yield(i)
-            min = j if min > j
-          }
-          min
-        end
-      elsif default_block
-        if min = find{|i| i}
-          min = default_block[*min]
-          each{|i|
-            j = default_block[*i]
-            min = j if min > j
-          }
-          min
-        end
-      else
-        min()
-      end
-    end
-    
-    def Max(&blk)
-      if block_given?
-        if max = find{|i| i}
-          max = yield(max)
-          each{|i|
-            j = yield(i)
-            max = j if max < j
-          }
-          max
-        end
-      elsif default_block
-        if max = find{|i| i}
-          max = default_block[*max]
-          each{|i|
-            j = default_block[*i]
-            max = j if max > j
-          }
-          max
-        end
-      else
-        max()
-      end
-    end
-    
-    alias avg average
-    alias std standard_deviation
-    alias var variance
-  end
-end
-
-
-class Array
-  include Math::Statistics
-end
-
-
 if optHash.key?("--target")
 
-	tbasecov = File.new($prefix + ".target_base_cov", "w")
+  tbasecov = File.new($prefix + ".target_base_cov", "w")
+#  tout = File.new($prefix + ".target_summary", "w")
 
-	$feature.each_key do |ref|
-		$feature[ref].keys.sort.each do |ff|
-			s ,e = $feature[ref][ff]
-			$coverage[ref].keys.select {|i| i>= s -1 and i <= e -1}.sort.each do |j|
-				tbasecov.puts "#{ff}\t#{$coverage[ref][j]}\t#{ref}\t#{j}"
-			end
-		end
-	end
-	##  refout.puts ">#{ref}"
-#  $coverage[ref].keys.sort {|a,b| a<=>b}.each do |i|
-#    refout.puts "#{ref}\t#{i}\t#{$coverage[ref][i]}"
-#  end
-	tbasecov.close
-	
-
-
-  tout = File.new($prefix + ".target_summary", "w")
-
+  
   $feature.each_key do |ref|
-    $feature[ref].each_key do |ff|
-      s, e = $feature[ref][ff]
+    covarray = $coverage.delete(ref).to_a.sort {|a,b| a[0]<=> b[0]}
+    $feature[ref].keys.sort.each do |ff|
+      s ,e,dir = $feature[ref][ff]
 
-      cova = $coverage[ref].reject {|p, c| p <  s-1 or p > e - 1}.values   
-      avg = cova.average
-      stderr = cova.std
-      tout.puts "#{ff}\t#{ref}\t#{s}\t#{e}\t#{avg}\t#{stderr}"
+      # Hash.reject returns a hash, but Hash.select returns an array
+#      subhash = $coverage[ref].reject {|k,v| (k <  s or k > e  )} 
+      suba = covarray.select {|i| i[0] >=s and i[0] <= e}
+      
+      if dir > 0 
+        num = 1
+      else
+        num = e - s + 1
+      end
+
+#      subhash.keys.sort.each do |j|
+      suba.each do |i|
+#        tbasecov.puts "#{ff}\t#{num}\t#{$coverage[ref][j]}\t#{ref}\t#{j}"
+        tbasecov.puts "#{ff}\t#{num}\t#{i[1]}\t#{ref}\t#{i[0]}"
+        num += dir
+      end
+
+ #     cc = subhash.values.select {|i| i>0}.size
+ #     tout.puts "#{ff}\t#{ref}\t#{s}\t#{e}\t#{e-s+1}\t#{cc}\t#{cc.to_f/(e-s+1)}"
     end
   end
-  tout.close
+  tbasecov.close
+  
+  # cova = $coverage[ref].reject {|p, c| p <  s-1 or p > e - 1}.values   
+  #    avg = cova.average
+  #    stderr = cova.std
+  #    tout.puts "#{ff}\t#{ref}\t#{s}\t#{e}\t#{avg}\t#{stderr}"
+  
+#  tout.close
 end
 
-
+exit

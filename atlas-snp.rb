@@ -46,7 +46,7 @@ end
 if optHash.key?("--minscore")
   $minscore = optHash["--minscore"].to_f
 else
-  $minscore = 24.0
+  $minscore = 30.0
 end
 
 if optHash.key?("--slope")
@@ -116,7 +116,7 @@ def homocount(str)
     top = homo.keys.sort {|a,b| homo[b] <=> homo[a]}[0]
     xx = homo[top]
   else
-    xx = 0
+    xx = 1
   end
   return xx
 end
@@ -140,7 +140,7 @@ offset = 0
 query,ref,qsize,score,dir = '','', 0, 0,''
 flag = 0
 span = []
-
+sub, gap, tail = 0, 0, 0 
 File.new(optHash["--crossmatch"],'r').each do |line|
   if line.match($pattern)
     compute(query,ref,span)
@@ -151,8 +151,9 @@ File.new(optHash["--crossmatch"],'r').each do |line|
     qsize = qend + qright
     dir = '+'
     ratio = (qend - qstart + 1)/qsize.to_f
-		
-    if sub > $maxsub or del + ins > $maxindel 
+    gap = del + ins
+    tail = [qstart, qright].max
+    if sub > $maxsub or gap > $maxindel 
       flag = 0
       next
     else
@@ -201,17 +202,17 @@ File.new(optHash["--crossmatch"],'r').each do |line|
       
       tend = tstart + block
       span << [tstart + offset, tend + offset]
-    elsif type =~ /^I/
-      tstart = tplace  
-      tend = tstart
-      span << [tstart + offset, tend + offset]
+#    elsif type =~ /^I/
+#      tstart = tplace  
+#      tend = tstart
+#      span << [tstart + offset, tend + offset]
     elsif type =~ /^S/ # substitution
       tstart = tplace + offset
-      next if ii == 'N'
+#      next if ii == 'N'
       dist = qsize - qplace 
       $snp[ref] = {} unless $snp.key?(ref)
       $snp[ref][tstart] = '' unless $snp[ref].key?(tstart)
-      $snp[ref][tstart] << "#{ii}(#{qual})#{query}(#{dist})(#{score}/#{qsize})#{dir}#{env} "
+      $snp[ref][tstart] << "#{ii}(#{qual})#{query}(#{dist})(#{score}/#{qsize})#{dir}#{env}(#{sub}/#{gap}/#{tail}) "
     end
   end
 end
