@@ -1,9 +1,9 @@
 # input: cross_match -discrep_lists output and the reference sequence
-# output: 1. SNP list with useful information
-#         2. a quality-like file storing coverage on each base of reference
+# output:  raw SNP list with relevant information
 
 # some part modified from Lei Chen's program
 # only do substitutions
+
 
 require 'getoptlong'
 
@@ -67,7 +67,7 @@ $seq = {}
 
 
 
-def compute(name, ref, span)
+def compute(name, ref, span, snps)
   return if span.length < 1
   
   head = span.shift
@@ -88,11 +88,33 @@ def compute(name, ref, span)
       $coverage[ref][i] += 1
     end
   end
+
+  snps.each_key do |pos|
+    refbase = $seq[ref][pos-1,1]
+    curbase = snps[pos][:snpbase]
+    if snps.key?(pos + 1)
+      if refbase == snps[pos+1][:snpbase] and curbase = $seq[ref][pos,1]
+        snps[pos][:info] << "swap;"
+      else
+        snps[pos][:info] << "mnp;"
+      end
+    elsif snps.key?(pos - 1)
+      if refbase == snps[pos-1][:snpbase] and curbase = $seq[ref][pos-2,1]
+        snps[pos][:info] << "swap;"
+      else
+        snps[pos][:info] << "mnp;"
+      end
+    else
+      snps[pos][:info] << "snp;"
+    end
+    $snp[ref][pos] = '' unless $snp[ref].key?(pos)
+    $snp[ref][pos] << snps[pos][:info]
+  end
 end
 
 # count the occurence of homo-polymer runs in a short sequence
 def homocount(str)
-	s = str.size
+  s = str.size
   lasts = ''
   homo = {}
   st = 0
@@ -126,6 +148,7 @@ File.new(optHash["--reference"], 'r').each do |line|
   if line=~ /^>(\S+)/
     ref = $1
     $seq[ref] = ''
+    $snp[ref] = {}
   else
     $seq[ref] << line.chomp
   end
@@ -140,13 +163,16 @@ offset = 0
 query,ref,qsize,score,dir = '','', 0, 0,''
 flag = 0
 span = []
+snps = {}
 sub, gap, tail = 0, 0, 0 
 File.new(optHash["--crossmatch"],'r').each do |line|
   if line.match($pattern)
-    compute(query,ref,span)
+    compute(query,ref,span,snps)
     score,sub,del,ins,query,qstart,qend,qright,tstrand,target,d1,d2,d3,lab =$1.to_f,$2.to_f,$3.to_f,$4.to_f,$5,$6.to_i,$7.to_i,$8.to_i,$9,$10,$11,$12,$13,$14
 
     span  = []
+    snps = {}
+
     ref = ''
     qsize = qend + qright
     dir = '+'
@@ -202,21 +228,21 @@ File.new(optHash["--crossmatch"],'r').each do |line|
       
       tend = tstart + block
       span << [tstart + offset, tend + offset]
-#    elsif type =~ /^I/
-#      tstart = tplace  
-#      tend = tstart
-#      span << [tstart + offset, tend + offset]
+
     elsif type =~ /^S/ # substitution
       tstart = tplace + offset
 #      next if ii == 'N'
       dist = qsize - qplace 
-      $snp[ref] = {} unless $snp.key?(ref)
-      $snp[ref][tstart] = '' unless $snp[ref].key?(tstart)
-      $snp[ref][tstart] << "#{ii}(#{qual})#{query}(#{dist})(#{score}/#{qsize})#{dir}#{env}(#{sub}/#{gap}/#{tail}) "
+      snps[tstart] = {}
+      snps[tstart][:snpbase] = ii
+      snps[tstart][:info] = "#{ii}(#{qual})#{query}(#{dist})(#{score}/#{qsize})#{dir}#{env}(#{sub}/#{gap}/#{tail})"
+#      $snp[ref] = {} unless $snp.key?(ref)
+#      $snp[ref][tstart] = '' unless $snp[ref].key?(tstart)
+#      $snp[ref][tstart] << "#{ii}(#{qual})#{query}(#{dist})(#{score}/#{qsize})#{dir}#{env}(#{sub}/#{gap}/#{tail});"
     end
   end
 end
-compute(query,ref,span)
+compute(query,ref,span, snps)
 
 
 snpout = File.new(optHash["--output"]+".SNP.list", 'w')
@@ -225,7 +251,7 @@ $snp.keys.sort.each do |ref|
   $snp[ref].keys.sort.each do |pos|
     bases = {}
     t = 0
-    $snp[ref][pos].split(/\s+/).each do |r|
+    $snp[ref][pos].split(';').each do |r|
       if r=~ /^(\S)\((\d+)\)(\S+)\((\d+)\)\((\S+)\/(\d+)\)/
         base = $1
         rname = $3
@@ -258,31 +284,14 @@ $snp.keys.sort.each do |ref|
     refBase = $seq[ref][pos-1,1]
     refEnv = $seq[ref][pos-7,13]
     homonum = homocount(refEnv)
+    
     snpout.puts "#{ref}\t#{pos}\t#{refBase}\t#{homonum}\t#{refEnv}\t#{$coverage[ref][pos]}\t#{array[0]}\t#{qual}\t#{oriqual}\t#{num}\t#{t}\t#{$snp[ref][pos]}"
   end
 end
 snpout.close
 
-# do not output coverage 
-exit 
-# 
-covout = File.new(optHash["--output"]+".coverage.list", 'w')
 
-# need better implementation here
-$coverage.keys.sort.each do |ref|
-  covout.puts ">#{ref}"
-  $coverage[ref].shift  # remove the first one
-  # t = $coverage[ref].size / 5000
- # str = ''
- # 0.upto(t) do |i|
-    #		covout.puts $coverage[ref][i*5000, 5000].join(" ")
-    # str << "#{$coverage[ref].slice!(i*5000, 5000).join(" ")}\n"
- # end
- # covout.puts str
-  covout.puts $coverage[ref]
-  $coverage[ref]=nil
-end
-covout.close
+exit 
 
 
 
