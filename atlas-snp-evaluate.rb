@@ -1,10 +1,13 @@
+## TODO:
+#  1. do harmonic mean and then multiply to combine logOdds from individual reads at each SNP base
+#  2. also design a tree-based procedure and append the score in the end
+
 ## evaluate raw SNP calls based on 
 ##  1. quality scores
 #   2. longest nearby homopolymer size
 #   3. distance to 3' end
 #   4. "swapped" bases  -- specific to 454 sequencing
-
-# todo:   *agreement among mapped reads*
+#  ideas wanted:   *agreement among mapped reads*
 
 ## ------------------------------------------------------------------
 ## I. logistic linear regression, trained on fly 454 FLX data:
@@ -166,8 +169,8 @@ File.new(optHash["--input"], "r").each do  |line|
         print "#{r}(#{logOdd});"
       end
     end
+    print "\t#{eva}\n"
   end
-  print "\t#{eva}\n"
 end
 
 
