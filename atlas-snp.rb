@@ -92,20 +92,22 @@ def compute(name, ref, span, snps)
   snps.each_key do |pos|
     refbase = $seq[ref][pos-1,1]
     curbase = snps[pos][:snpbase]
-    if snps.key?(pos + 1)
-      if refbase == snps[pos+1][:snpbase] and curbase = $seq[ref][pos,1]
+    if snps.key?(pos + 1) or snps.key?(pos + 2) or snps.key?(pos - 1) or snps.key?(pos - 2)
+      if snps.key?(pos + 1) and refbase == snps[pos+1][:snpbase] and curbase == $seq[ref][pos,1]
         snps[pos][:info] << "swap;"
-      else
-        snps[pos][:info] << "mnp;"
-      end
-    elsif snps.key?(pos - 1)
-      if refbase == snps[pos-1][:snpbase] and curbase = $seq[ref][pos-2,1]
+      elsif snps.key?(pos - 1) and refbase == snps[pos-1][:snpbase] and curbase == $seq[ref][pos-2,1] 
         snps[pos][:info] << "swap;"
-      else
+      elsif snps.key?(pos + 2) and refbase == snps[pos+2][:snpbase] and curbase == $seq[ref][pos+1,1]
+        snps[pos][:info] << "swap;"
+      elsif snps.key?(pos - 2) and refbase == snps[pos-2][:snpbase] and curbase == $seq[ref][pos-3,1]
+        snps[pos][:info] << "swap;"
+      elsif snps.key?(pos + 1) or snps.key?(pos - 1) 
         snps[pos][:info] << "mnp;"
+      else
+        snps[pos][:info] << "snp;"        
       end
     else
-      snps[pos][:info] << "snp;"
+      snps[pos][:info] << "snp;"      
     end
     $snp[ref][pos] = '' unless $snp[ref].key?(pos)
     $snp[ref][pos] << snps[pos][:info]
@@ -156,6 +158,7 @@ end
 
 # initiate $coverage
 $seq.each_key do |ref|
+#  $stderr.puts ref
   $coverage[ref] = Array.new($seq[ref].size + 1) {|i| i = 0}
 end
 
@@ -188,6 +191,9 @@ File.new(optHash["--crossmatch"],'r').each do |line|
     if target=~ /^(\S+)\_(\d+)\_(\d+)$/
       ref = $1
       offset = $2.to_i - 1
+    elsif target=~ /^(\S+)$/
+      ref = $1
+      offset = 0
     end
     
     if d1 =~ /\((\d+)\)/
@@ -231,7 +237,7 @@ File.new(optHash["--crossmatch"],'r').each do |line|
 
     elsif type =~ /^S/ # substitution
       tstart = tplace + offset
-#      next if ii == 'N'
+      next if ii == 'N'
       dist = qsize - qplace 
       snps[tstart] = {}
       snps[tstart][:snpbase] = ii
