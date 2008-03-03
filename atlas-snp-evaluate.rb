@@ -1,5 +1,5 @@
 ## TODO:
-#  1. do harmonic mean and then multiply to combine logOdds from individual reads at each SNP base
+#  1. convert logisticP to p(error | mismatch): 1/(1+odds)
 #  2. also design a tree-based procedure and append the score in the end
 
 ## evaluate raw SNP calls based on 
@@ -113,6 +113,16 @@ $errorPrior = [0.062, 0.099, 0.091, 0.059, 0.053, 0.054, 0.073, 0.08, 0.15, 0.28
 $snpPrior = [0.20, 0.35, 0.21, 0.097, 0.063, 0.035, 0.019, 0.011, 0.0064, 0.0032]
 
 
+def harmonicMean(array)
+  return nil if array.size < 1
+  t = 0.0
+  array.each do i
+    t += 1/i.to_f
+  end
+
+  return 1/t
+end
+
 
 File.new(optHash["--input"], "r").each do  |line|
   cols=line.split(/\s+/)
@@ -120,15 +130,18 @@ File.new(optHash["--input"], "r").each do  |line|
   homo,cov,snpbase,num,readinfo =cols[3].to_i,cols[5].to_i, cols[6], cols[9].to_i, cols[11]
   
   print cols[0..-2].join("\t") + "\t"
-  eva = 0
-  if snpbase=='N' or snpbase =="SNPBase"
-    puts readinfo + "\t-100"
+
+  if snpbase =="SNPBase"
+    puts readinfo + "\tlogOdds\terrorP"
   else
+    eva = 0
+    eP = 1
     readinfo.split(";").each do |r|
       if r=~ /^(\S+)\((\d+)\)\S+\((\d+)\)\S+([+|-])\S+\((\S+)\/(\S+)\/(\d+)\)(\S+)$/
         base,qual,dist,dir,sub,indel,tail,swap = $1,$2.to_i,$3.to_i,$4,$5.to_f,$6.to_f,$7.to_i,$8
         if base == 'N'
           logOdd = 0
+          errorPosteriorFull = 1
         else
           if dist > 120 #  distance to 3' 
             dist = 120 
@@ -164,12 +177,16 @@ File.new(optHash["--input"], "r").each do  |line|
           snpPosterior = sPrior * $snpRate
 
           logOdd = ( Math.log(snpPosterior / errorPosterior) * 100 ).round/ 100.to_f
+
+          ## posterior error probability
+          errorPosteriorFull = 1.0 / (1 + snpPosterior/errorPosterior)
         end
         eva += logOdd
-        print "#{r}(#{logOdd});"
+        eP *= errorPosteriorFull
+        print "#{r}(#{logOdd})(#{errorPosteriorFull});"
       end
     end
-    print "\t#{eva}\n"
+    print "\t#{eva}\t#{eP}\n"
   end
 end
 

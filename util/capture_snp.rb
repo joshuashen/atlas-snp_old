@@ -1,5 +1,7 @@
 ## given a SNP list from the whole genome and targeted genomic region, grab all the SNPs in the targeted region 
 
+## sorry, the format now is specifically for Dicty 
+
 require 'getoptlong'
 
 opts = GetoptLong.new(
@@ -27,7 +29,7 @@ end
 
 $ranges = {} # store the genomic locations of all genes
 $snps = {}  # store the number of SNPs for each gene ddb
-
+$sizes = {}
 # ddb name (as key) -> gene name (as value),  a gene could have multiple ddb names; a ddb always points to one gene.
 $ddbh = {}
 
@@ -48,7 +50,7 @@ File.new(optHash["--target"], 'r').each do |line|
 
     # a hash for this ddb, ddb name as the key, Range as the value
     $ranges[ref][ddb] = Range.new(s,e)
-
+    $sizes[ddb] = e - s + 1
     $ddbh[ddb] = gene
     $snps[ddb] = 0
   end
@@ -87,7 +89,9 @@ end
 
 # print the number of SNPs for each gene, a ddb a line                                                
 $snps.each_key do |ddb|
-  statout.puts "#{ddb}\t#{$ddbh[ddb]}\t#{$snps[ddb]}"
+  gsize = $sizes[ddb]
+  ratio = (1000*$snps[ddb] / gsize.to_f).round / 1000.0
+  statout.puts "#{ddb}\t#{$ddbh[ddb]}\t#{$snps[ddb]}\t#{gsize}\t#{ratio}"
 end
 
 snpout.close
