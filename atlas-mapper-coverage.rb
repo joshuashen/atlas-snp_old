@@ -26,7 +26,9 @@ if optHash.key?("--help") or (!optHash.key?("--reference") && !optHash.key?("--t
   $stderr.puts "Usage: ruby __.rb -x cross_match.output  -o prefix_of_output [-r ref.fasta] [ -t targeted_genomic_regions ] [ options ]"
   $stderr.puts "    Note: either -r or -t is required "
   $stderr.puts "    Options: "
-  $stderr.puts "          -m  -s -g "
+  $stderr.puts "          -m min cross_match score deemed as good hit, default 24 "
+  $stderr.puts "          -s max allowed substitution rate in percentage for each cross_match aligned block; blocks with higher percentage will be discarded in the coverage calculation. default value is 5.0"
+  $stderr.puts "          -g max allowed indel rate. default 5.0"
   $stderr.puts "\n The format of target regions: "
   $stderr.puts " target_name\treference_name\tstart_on_ref\tend_on_ref\tdirection(1 or -1)"
 
@@ -55,12 +57,6 @@ if optHash.key?("--minscore")
   $minscore = optHash["--minscore"].to_f
 else
   $minscore = 24.0
-end
-
-if optHash.key?("--slope")
-  $slope = optHash["--slope"].to_f
-else
-  $slope = 0.13
 end
 
 
