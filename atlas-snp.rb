@@ -90,16 +90,16 @@ def compute(name, ref, span, snps)
   end
 
   snps.each_key do |pos|
-    refbase = $seq[ref][pos-1,1]
+    refbase = $seq[ref][pos-1,1].upcase
     curbase = snps[pos][:snpbase]
     if snps.key?(pos + 1) or snps.key?(pos + 2) or snps.key?(pos - 1) or snps.key?(pos - 2)
-      if snps.key?(pos + 1) and refbase == snps[pos+1][:snpbase] and curbase == $seq[ref][pos,1]
+      if snps.key?(pos + 1) and refbase == snps[pos+1][:snpbase] and curbase == $seq[ref][pos,1].upcase
         snps[pos][:info] << "swap;"
-      elsif snps.key?(pos - 1) and refbase == snps[pos-1][:snpbase] and curbase == $seq[ref][pos-2,1] 
+      elsif snps.key?(pos - 1) and refbase == snps[pos-1][:snpbase] and curbase == $seq[ref][pos-2,1].upcase 
         snps[pos][:info] << "swap;"
-      elsif snps.key?(pos + 2) and refbase == snps[pos+2][:snpbase] and curbase == $seq[ref][pos+1,1]
+      elsif snps.key?(pos + 2) and refbase == snps[pos+2][:snpbase] and curbase == $seq[ref][pos+1,1].upcase
         snps[pos][:info] << "swap;"
-      elsif snps.key?(pos - 2) and refbase == snps[pos-2][:snpbase] and curbase == $seq[ref][pos-3,1]
+      elsif snps.key?(pos - 2) and refbase == snps[pos-2][:snpbase] and curbase == $seq[ref][pos-3,1].upcase
         snps[pos][:info] << "swap;"
       elsif snps.key?(pos + 1) or snps.key?(pos - 1) 
         snps[pos][:info] << "mnp;"

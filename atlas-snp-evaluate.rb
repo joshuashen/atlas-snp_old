@@ -82,21 +82,21 @@ end
 
 if optHash.key?("--help") or !optHash.key?("--input")
   $stderr.puts "Usage: ruby __.rb -i SNP.list [ -e estimated_substitution_error_rate ] [ -s estimated_SNP_rate ] > output"
-  $stderr.puts "       -e   default 0.002; this is optimized for 454 FLX"
-  $stderr.puts "       -s   default 0.002; for human, it's about 0.0012 "
+  $stderr.puts "       -e   default 0.0008; this is optimized for 454 FLX"
+  $stderr.puts "       -s   default 0.0015; for human, it's about 0.0013 "
   exit
 end
 
 if optHash.key?("--errorRate")
   $errorRate = optHash["--errorRate"].to_f
 else
-  $errorRate = 0.002
+  $errorRate = 0.0008
 end
 
 if optHash.key?("--snpRate")
   $snpRate = optHash["--snpRate"].to_f
 else
-  $snpRate = 0.002
+  $snpRate = 0.0015
 end
 
 ## based on trainning data from fly
@@ -186,6 +186,7 @@ File.new(optHash["--input"], "r").each do  |line|
         print "#{r}(#{logOdd})(#{errorPosteriorFull});"
       end
     end
+    eP = (eP*10000).round/10000.0
     print "\t#{eva}\t#{eP}\n"
   end
 end
