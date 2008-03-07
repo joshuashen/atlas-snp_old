@@ -83,7 +83,7 @@ end
 if optHash.key?("--help") or !optHash.key?("--input")
   $stderr.puts "Usage: ruby __.rb -i SNP.list [ -e estimated_substitution_error_rate ] [ -s estimated_SNP_rate ] > output"
   $stderr.puts "       -e   default 0.0008; this is optimized for 454 FLX"
-  $stderr.puts "       -s   default 0.0015; for human, it's about 0.0013 "
+  $stderr.puts "       -s   default 0.001, optimized for human "
   exit
 end
 
@@ -96,7 +96,7 @@ end
 if optHash.key?("--snpRate")
   $snpRate = optHash["--snpRate"].to_f
 else
-  $snpRate = 0.0015
+  $snpRate = 0.001
 end
 
 ## based on trainning data from fly

@@ -12,6 +12,7 @@ opts = GetoptLong.new(
     ["--crossmatch", "-x", GetoptLong::OPTIONAL_ARGUMENT],
     ["--oneOff", "-n", GetoptLong::OPTIONAL_ARGUMENT],
     ["--minIdentity", "-i", GetoptLong::OPTIONAL_ARGUMENT],
+    ["--minmatchRatio", "-t", GetoptLong::OPTIONAL_ARGUMENT],
     ["--masklevel", "-l", GetoptLong::OPTIONAL_ARGUMENT],
     ["--help", "-h", GetoptLong::NO_ARGUMENT],
     ["--xmOnly", "-z", GetoptLong::NO_ARGUMENT],
@@ -26,10 +27,11 @@ opts.each do |opt, arg|
 end
 
 if optHash.key?("--help") or !optHash.key?("--reference") or !optHash.key?("--query")
-  $stderr.puts "Usage: ruby __.rb -q query.fasta -r reference.fasta [-m minscore -c cutoff] [-b path_to_blat -x path_to_cross_match]  [-n 1 -i minIdentity_blat] [-z] [--short] [-a]"
+  $stderr.puts "Usage: ruby __.rb -q query.fasta -r reference.fasta [-t minMatchRatio -m minscore -c cutoff] [-b path_to_blat -x path_to_cross_match]  [-n 1 -i minIdentity_blat] [-z] [--short] [-a]"
   $stderr.puts "  note: cutoff is the percentage for best hit cutoff, default 0.995"
   $stderr.puts "        -a   run blat and blat parsing only -- skip the cross_match step"
   $stderr.puts "        -z   run cross_match only -- must run with -a first in a separate step.   The -a and -z options are useful to separate the two steps for logistical reasons."
+  $stderr.puts "      -t min matching ratio. Default 0.85.  -- definition: matching bases / read size, according to blat result. The reads with smaller ratio will be discarded because they are very likely to be from other copies of repeats or paralogs."
   exit
 end
 
@@ -97,6 +99,11 @@ else
   $minIdentity = 90
 end
 
+if optHash.key?("--minmatchRatio")
+  $minmatchRatio = optHash["minmatchRatio"].to_f
+else
+  $minmatchRatio = 0.85
+end
 
 kmer = 11
 $unitSize = 100000
@@ -204,7 +211,8 @@ File.new(bestHits,"r").each do |line|
   cols = line.split(/\s+/)
   next if cols.size < 11 
   flag = cols[-1]
-  next if flag == 'repeat'
+  next if flag == 'repeat' or cols[4].to_i < cols[1].to_i * $minmatchRatio
+
   readName, refName, tstart = cols[0], cols[2], cols[7].to_i
   next unless $index.key?(refName)
   

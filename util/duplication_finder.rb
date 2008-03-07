@@ -25,7 +25,7 @@ class Gene
 
   def slide
 # collect the snp information in sliding windows
-# the window size: 2k;  overlapping 1k 
+    # the window size: 1k;  overlapping 0.5k 
 # information to collect:  SNP rate, het_SNP rate, and average coverage
     genesize = @coverage.size
    #  $stderr.puts "#{genesize}\t#{@snps.size}"
