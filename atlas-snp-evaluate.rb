@@ -65,6 +65,14 @@
 #          0.05 0.15 0.25 0.35 0.45 0.55 0.65 0.75 0.85 0.95
 #
 #
+def combinatory(n,i)
+  t = 1.0
+  1.upto(i) do |j|
+    t = t* (n-j+1) / j
+  end
+  return t
+end
+
 
 require 'getoptlong'
 
@@ -132,13 +140,15 @@ File.new(optHash["--input"], "r").each do  |line|
   print cols[0..-2].join("\t") + "\t"
 
   if snpbase =="SNPBase"
-    puts readinfo + "\tlogOdds\terrorP"
+    puts readinfo + "\t+/-Reads\terrorP"
   else
     eva = 0
     eP = 1
+    dirs = {'+' => 0, '-' => 0}
     readinfo.split(";").each do |r|
       if r=~ /^(\S+)\((\d+)\)\S+\((\d+)\)\S+([+|-])\S+\((\S+)\/(\S+)\/(\d+)\)(\S+)$/
         base,qual,dist,dir,sub,indel,tail,swap = $1,$2.to_i,$3.to_i,$4,$5.to_f,$6.to_f,$7.to_i,$8
+        dirs[dir] += 1
         if base == 'N'
           logOdd = 0
           errorPosteriorFull = 1
@@ -187,7 +197,16 @@ File.new(optHash["--input"], "r").each do  |line|
       end
     end
     eP = (eP*10000).round/10000.0
-    print "\t#{eva}\t#{eP}\n"
+    x = [dirs['+'], dirs['-']].min
+
+## Binomial distribution:
+## F(x; n, 0.5) = Pr(X<= x) = SUM (take j from n)*0.5^n
+    strandPr = 0
+    0.upto(x) do |i|
+      strandPr += combinatory(num,i) * (0.5**num)
+    end
+    
+    print "\t#{x}\t#{eP}\t#{strandPr}\n"
   end
 end
 

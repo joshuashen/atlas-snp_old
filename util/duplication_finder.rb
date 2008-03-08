@@ -38,12 +38,15 @@ class Gene
       str << "#{@name}\t" + collectInfo(window2) + "\n"
     end
     lastwindow = Range.new(steps*1000 + 1, [steps*1000+500, genesize].min)
-    str << "#{@name}\t" + collectInfo(lastwindow) + "\n"
+    if lastwindow.first < lastwindow.last
+      str << "#{@name}\t" + collectInfo(lastwindow) + "\n"
+    end
     return str
   end
 
   def collectInfo(range)
     s,e =range.first,range.last
+    
    # $stderr.puts "#{s}\t#{e}"
     nonzero = @coverage[s-1..e-1].select {|i| i>0}
     t = 0
