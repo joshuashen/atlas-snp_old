@@ -140,7 +140,7 @@ File.new(optHash["--input"], "r").each do  |line|
   print cols[0..-2].join("\t") + "\t"
 
   if snpbase =="SNPBase"
-    puts readinfo + "\t+/-Reads\terrorP"
+    puts readinfo + "\tless_strand\terrorP\tstrandP"
   else
     eva = 0
     eP = 1

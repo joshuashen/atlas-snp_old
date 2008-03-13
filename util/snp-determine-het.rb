@@ -40,6 +40,7 @@ while line= ARGF.gets do
   
   pr = 1 - pr
 # 1 - pr # probability of error to reject null hypothesis -- that this is a heterozygous SNP
+  pr = (pr*10000).round/10000.0
   puts "#{line.chomp}\t#{pr}"
 
 end

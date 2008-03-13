@@ -159,7 +159,7 @@ end
 # initiate $coverage
 $seq.each_key do |ref|
 #  $stderr.puts ref
-  $coverage[ref] = Array.new($seq[ref].size + 1) {|i| i = 0}
+  $coverage[ref] = Array.new($seq[ref].size + 1) {|i|  0}
 end
 
 offset = 0
