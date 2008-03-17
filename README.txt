@@ -6,6 +6,15 @@
 3.  ruby atlas-snp.rb -x cross_match_output -r reference.fasta -o prefix_of_outputs ## calling candidate SNPs
 4.  ruby atlas-snp-evaluate.rb -i SNP.list -e overall_error_rate -s estimated_SNP_rate > SNP.list.eva  ## evaluate the error probability of each candidate SNP
 
+*Requirement*
+ - ruby
+ - blat
+ - cross_match
+ - servers with large RAM
+
+You can find blat binaries on Jim Kent's website: http://hgwdev.cse.ucsc.edu/~kent/exe/
+And cross_match at: http://www.phrap.org/consed/consed.html#howToGet
+
 -----------------------
 
 *What's new*
@@ -48,76 +57,101 @@ Improvement on BLAT memory usage and cross_match output IO. Significant changes 
 
 ------------
 
-*Requirement*
-
- - ruby
- - blat
- - cross_match
- - servers with large RAM
-
-You can find blat binaries on Jim Kent's website: http://hgwdev.cse.ucsc.edu/~kent/exe/
-And cross_match at: http://www.phrap.org/consed/consed.html#howToGet
-
 *Protocol*
 
-The procedure has three steps:
+Protocol
 
-1. Mapping and aligning 454 reads onto the reference genome.
+Code distribution: open access at http://code.google.com/p/atlas-snp/
+Software requirement: Ruby, BLAT, cross_match, and UNIX-like operating systems. 
 
-2. Calling raw (a) SNPs and (b) indels based on results from step 1.
+Figure 3 is a flowchart showing the overall procedure.
 
-3. SNP/indel filtering based on quality scores and biology.
+Step 1. Creating the reference environment.
 
-I have written a set of streamlined programs to do step 1 and step 2a. The step 2b (indels) is in the working. Step 3 is straightforward in terms of programming but requires some discussions on the biology.
+Command
+ruby atlas-mapper-format-ref.rb  -r reference.fasta [options]
 
-1. Atlas-mapper
+Input and options
+-r    reference.fasta  required
+This specify the file of the reference sequencing in fasta format, for example: 
+>DDB0232429 |Chromosomal Sequence| on chromosome: 2 position 1 to 8470628
+TTTTTTTTTTTTTTTTTTTTTTTTTATGTATGACACAATCATTAAATCATTACACATACC
+AATTAGATTTTCTTTTTTTTTCTGATTTTAAAAACAAAAAAAAAACAAAAATTTATAAAT
 
-Map the reads (454 or Sanger) to reference sequence via BLAT and do refined sequence local alignment via cross_match.
+-l	length of pieces  optional, default value 100000
+The program breaks the reference sequence into smaller pieces to avoid performance issues with cross_match alignment. 
 
-1) Format the reference sequence (including making blat ooc file, splitting reference into smaller pieces for cross_match):
+-f  frequency cutoff of 11-mers, optional, default 1024
+The most important performance boost of BLAT comes from –ooc option, which enables the program to ignore over-represented kmers in the genome in the alignment seeding stage. 1024 is optimized for mammalian genomes. 100~200 is best for smaller or less complex genomes.
+ 
+-b	UNIX path to the BLAT program, optional
 
-ruby /PATH/TO/atlas-mapper-format-ref.rb -r reference.fasta
-Note: this program requires about 3.0G RAM for the human genome. The reference.fasta is the reference sequences in one fasta file. The output is a directory named by reference.fasta with a suffix "Env4mapping".
+If BLAT is not accessible by default in the user’s shell, the path to the blat program can be provided by this option. Note: it is best practice to add this path into one’s PATH shell environment.
 
-2) Map and align: (including doing blat, picking best hits and uniquely mapped reads, doing cross_match etc)
+Output
+This command creates a directory named by reference.fasta with a suffix "Env4mapping". It contains relevant information and data for subsequent blat and cross_match steps. The input reference fasta file is split into less than 900Mbps fragments to ensure running BLAT smoothly on servers with smaller than 2G RAM. The –ooc file is created according to command-line provided parameter. The reference sequence is also split into much smaller pieces, default at 100Kbps, to serve local alignment through cross_match.  Some meta-information was stored in a flat file inside the directory.
 
-ruby /PATH/TO/atlas-mapper.rb -q query.fasta -r reference.fasta [ options ]
-query.fasta is a fasta file containing a batch of 454 reads.
+Computation requirement and performance
+This step is fairly quick. The RAM usage depends on the size of the reference genome. It takes about 3.0G for the human genome. 
 
-The output is a directory with prefix "Mapping_of". It contains the blat result, blat best hits annotated as unique or repeats, and cross_match -discrep_lists output.
+Step 2. Mapping and aligning the reads onto reference
 
-Note the query.fasta should be in reasonable size. It's best to be no larger than 10Mbp. A typical 454 run produce 100+Mbp sequence. So it is necessary to split the run into smaller batches and do each batch on one cluster node.
+2.1  (Optional) Split the reads into batches so that each batch can be executed on a cluster node in a typical parallel computing environment. The typical size of a batch is 5-10 Mbps.
 
-Here is a Bash shell command example to submit all batches of mapping jobs to a cluster:
+ruby split-fasta-to-batches.rb –s input.fasta –p prefix_for_output –l length_for_each_batch –q 
 
-for f in batch_*.fa; do bsub -o lsf.o -e lsf.e -J $f "ruby ..../atlas-mapper.rb -q $f -r ref.fa [ options ]"; done
-2. Atlas-SNP
+Input and options
+-s    original fasta file of the reads
+-p    prefix for the output read batches
+-l    the maximal length of a batch
+-q    optional with no argument; if provided, the program will also split the quality file correspondingly. 
 
-This program calls SNPs from the cross_match -discrep_list output produced from step 1:
+Output
+Batches of read fasta files, with prefix provided by –p option. 
 
-ruby /PATH/TO/atlas-snp.rb -x cross_match_output -r reference.fasta -o prefix_of_outputs [-a adjust_quality_slope]
-( The -x specifies the cross_match result concatenated from the batch results from step 1. )
+2.2	 Run Atlas-mapper
 
-It outputs a list of SNPs.
+ruby atlas-mapper.rb –q reads.fasta –r reference.fasta [options]
 
-The format of SNP list is like this:
+Input and options
+Required:
+-q	reads.fasta, typically it is a fasta file containing a batch of reads.
+-r	reference.fasta it should be the same path of the reference as in Step 1.
 
-refName coordinate refBase homopolymer refEnv coverage SNPBase adjustedQual oriQual numVariant numAlter reads_info..
+Optional: 
+-n 1	  default: none
+This corresponds to the –oneOff option in BLAT, which allows one mismatch in the kmer “seeds”, is useful to map reads that are from a different species or a more diverged strain to the genome of the reference organism
+-i   corresponds to the –minIdentity options in BLAT
+-t   min match ratio, default 0.85
+After BLAT alignment, each read is assessed by dividing the matching length with read size, if the ratio is smaller than the cutoff value, the read is regarded as from a similar repeat region (or paralog) and thus discarded from following steps. 
+-l    masklevel option in cross_match, default 20
+-s    optimized for short reads, such as the ones from SolexaTM
 
-DDB0169550 317 A 5 ATTTATATTTTTA 92 T 16.48 19 1 1 T(19)089207_1601_3197(16)(134.0/140)-taaaatAataaat(1.43/0.0/1)swap;
+Output
+The output is a directory with prefix "Mapping_of" before name of reads.fasta. It contains the blat result in psl format and gzipped, blat best hits annotated as unique or repeat, and cross_match -discrep_lists output.
 
-U 6849 C 2 GGCAGACTTCAAG 12 T 37 37 1 1 T(37)086878_2543_1772(211)(237.0/243)+ggcagaTttcaag(0.82/0.0/1)snp;
+Note: This program assumes the user has access to BLAT and cross_help information and other options, type -h as the argument.
 
-This file contains all the information required to filter SNPs. We can use a straightforward ruby/perl/shell script to do filtering and calling homozygous/heterozygous based on:
+3.2 (Optional) Calculating depth-coverage on reference
 
-number of variant reads vs coverage
-adjusted quality
-the size of longest homopolymer run nearby
-For more help information and other options, just type -h as the argument.
-
-2.1 Compute depth-coverage on reference
-
+Command
 ruby atlas-mapper-coverage.rb -x cross_match.output -o prefix_of_output [-r ref.fasta] [ -t targeted_genomic_regions ] [ options ]
--r or -t is required. -r specifies the reference fasta file. If provided, the program will compute the depth-coverage for each base on the reference. NOTE this is time-consuming for large genomes. -t specifies a list of targeted genomic regions, with format like this:
-target_name reference_name	   start_on_ref	 end_on_ref  direction(1 or -1)
-If provided, the program will compute the depth-coverage only for bases in the targeted regions.
+
+Input and options
+-r    specifies the reference fasta file. If provided, the program will compute the depth-coverage for each base on the reference. NOTE this is time-consuming for large genomes. 
+-t    specifies a list of targeted genomic regions, with format:
+target_name	reference_name start_on_ref end_on_ref direction(1 or -1)
+
+If –t is provided, the program will compute the depth-coverage only for bases in the targeted regions.  NOTE: one of -r and -t options is required.
+
+Step 4. Evaluating the accuracy of candidate SNPs.
+
+Command
+ruby atlas-snp-evaluate.rb -i SNP.list [ -e estimated_substitution_error_rate ] [ -s estimated_SNP_rate ] > output
+
+Input and options
+Required:
+-i	candidate SNP list from Step 3.1
+
+Optional
+-e	estimated overall substitu
