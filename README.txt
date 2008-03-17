@@ -1,12 +1,27 @@
+*Quick start*
+
+1.  ruby atlas-mapper-format-ref.rb  -r reference.fasta    ## format reference
+2.1 ruby split-fasta-to-batches.rb -s input.fasta -p prefix_for_output -l length_for_each_batch -q  ## split the reads into smaller batches
+2.2 ruby atlas-mapper.rb -q reads.fasta -r reference.fasta  ## map and align the reads (a batch) onto the reference
+3.  ruby atlas-snp.rb -x cross_match_output -r reference.fasta -o prefix_of_outputs ## calling candidate SNPs
+4.  ruby atlas-snp-evaluate.rb -i SNP.list -e overall_error_rate -s estimated_SNP_rate > SNP.list.eva  ## evaluate the error probability of each candidate SNP
+
+-----------------------
+
 *What's new*
 
-Version 0.9.6
+Version 0.9.7, March 17th, 2008
+ - Replace legacy perl scripts with ruby. 
+ - Add README file in the package
+ - Change the header rows of atlas-snp.rb and atlas-snp-evaluate.rb output
+
+Version 0.9.6, March 08th, 2008
 A few Incremental changes, including:
 
 1. the -t option of atlas-mapper.rb. discarding reads with large tails or large insertions, since they are very likely to be from paralogs.
 2. change default values of -s and -e of atlas-snp-evaluate.rb
 
-Version 0.9.5
+Version 0.9.5, March 03rd, 2008
 atlas-snp-evaluate.rb: SNP evaluation program based on logistic regression and Bayesian inference. The supervised learning procedure was trained on True/False SNP sets from Drosophila melanogaster 454-FLX runs. The logistic regression procedure on each read takes account of:
 
  quality scores
@@ -16,7 +31,7 @@ atlas-snp-evaluate.rb: SNP evaluation program based on logistic regression and B
 
 P(error | all 454 substitutions on this base) is appended in the last column. For each read showing the "SNP", P(error | substitution) is appended in the last () field.
 
-Version 0.9.4
+Version 0.9.4, February 29th, 2008
 More information in the raw SNP output;
 Retooled coverage calculation.
 
@@ -31,20 +46,17 @@ Changes for limiting the memory usage of a single BLAT job to less than 2G. Reco
 
 Improvement on BLAT memory usage and cross_match output IO. Significant changes on how reads in a batch are distributed into smaller batches for doing cross_match against reference.
 
-
-----
-
+------------
 
 *Requirement*
 
-ruby
-blat
-cross_match
-large RAM
+ - ruby
+ - blat
+ - cross_match
+ - servers with large RAM
 
 You can find blat binaries on Jim Kent's website: http://hgwdev.cse.ucsc.edu/~kent/exe/
-
-For cross_match, http://www.phrap.org/consed/consed.html#howToGet
+And cross_match at: http://www.phrap.org/consed/consed.html#howToGet
 
 *Protocol*
 

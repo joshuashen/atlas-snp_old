@@ -252,7 +252,7 @@ compute(query,ref,span, snps)
 
 
 snpout = File.new(optHash["--output"]+".SNP.list", 'w')
-snpout.puts "refName\tcoordinate\trefBase\thomopolymer\trefEnv\tcoverage\tSNPBase\tadjustedQual\toriQual\tnumVariant\tnumAlter\treads_info.."
+snpout.puts "refName\tcoordinate\trefBase\thomopolymer\trefEnv\tcoverage\tSNPBase\tadjustedQual\toriQual\tnumSNPReads\tnumAlterReads\treads_info"
 $snp.keys.sort.each do |ref|
   $snp[ref].keys.sort.each do |pos|
     bases = {}
