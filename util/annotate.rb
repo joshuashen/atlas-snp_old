@@ -10,6 +10,30 @@ require 'getoptlong'
 $seq = {} # the DNA sequence of chromosomes
 $genes = {}  # genes,  sorted by end
 
+# codon table
+$codon = {"GCT" => 'A', "GCC" => 'A', 'GCA' => 'A', "GCG" => 'A', \
+  "CGT" => 'R', "CGC" => "R", "CGA" => 'R', 'CGG' => 'R', 'AGA' => 'R', 'AGG' => 'R', \
+  "AAT" => 'N', "AAC" => 'N', \
+  "GAT" => 'D', "GAC" => 'D', \
+  "TGT" => 'C', "TGC" => 'C', \
+  "CAA" => 'Q', "CAG" => 'Q', \
+  "GAA" => 'E', "GAG" => 'E', \
+  "GGT" => 'G', "GGC" => 'G', "GGA" => 'G', "GGG" => 'G', \
+  "CAT" => 'H', "CAC" => 'H', \ 
+  "ATT" => 'I', "ATC" => 'I', "ATA" => 'I', \
+  "ATG" => 'M', \
+  "TTA" => 'L', "TTG" => 'L', "CTT" => 'L', "CTC" => 'L', "CTA" => 'L', "CTG" => 'L', \
+  "AAA" => 'K', "AAG" => 'K', \
+  "TTT" => 'F', "TTC" => 'F', \
+  "CCT" => 'P', "CCC" => 'P', "CCA" => 'P', "CCG" => 'P', \
+  "TCT" => 'S', "TCC" => 'S', "TCA" => 'S', "TCG" => 'S', "AGT" => 'S', "AGC" => 'S', \
+  "ACT" => 'T', "ACC" => 'T', "ACA" => 'T', "ACG" => 'T', \
+  "TGG" => 'W', \
+  "TAT" => 'Y', "TAC" => 'Y', \
+  "GTT" => 'V', "GTC" => 'V', "GTA" => 'V', "GTG" => 'V', \
+  "TAG" => '*', "TGA" => '*', "TAA" => '*' }
+
+
 def translate(codon)
   x = Bio::Sequence::NA.new(codon)
   a = x.translate # or a = x.translate.codes
@@ -239,7 +263,7 @@ File.new(optHash["--snplist"], "r").each do |line|
     #    $genes[ref].each do |gene|
     $bookmark[ref].upto(($genes[ref].size - 1)) do |i|
       gene = $genes[ref][i]
-      if gene.exonStart > pos  # 
+      if gene.exonStart > pos  #  need optimization for speed
         next
       elsif gene.exonEnd < pos
         $bookmark[ref] = i
