@@ -46,7 +46,7 @@ end
 
 # puts "order\tbaseChangeType\t"
 
-puts "order\tswap\tbaseChangeType\tHomoPolymerSize\tEnv\tQual\tDist\tTail\tSub\tIndel\tScoreRatio\tReadSize"
+puts "order\tswap\tbaseChangeType\tHomoPolymerSize\tHomoPonRead\tEnv\tQual\tDist3\tTail\tSub\tIndel\tScoreRatio\tReadSize"
 File.new(snplist, 'r').each do |line|
   cols = line.split(/\t/)
   
@@ -62,10 +62,13 @@ File.new(snplist, 'r').each do |line|
 
   homo,homostart = homocount(env)
 
+
   info.split(';').each do |r|
     if r =~ /^(\S)\((\d+)\)(\S+)\((\d+)\)\((\S+)\/(\d+)\)([+|-])(\S+)\((\S+)\/(\S+)\/(\d+)\)(\S+)/
       qual,name,dist,score,size, dir, renv,subs,indels,tail, kind = $2.to_i, $3, $4.to_i, $5.to_f, $6.to_i, $7, $8, $9.to_f,$10.to_f, $11.to_i, $12
-      
+
+      dist5 = size - dist
+      rhomo, rhomos = homocount(renv)      
       if kind== 'swap'
         swap = 1
       elsif kind == 'mnp'
@@ -92,8 +95,10 @@ File.new(snplist, 'r').each do |line|
       else
         homoc = 0
       end
+
+
 #       puts "#{num}\t#{trans}\t#{homol}\t#{homoc}\t#{homor}\t#{env}\t#{qual}\t#{dist}\t#{score/size}\t#{size}"
-      puts "#{num}\t#{swap}\t#{trans}\t#{homo}\t#{env}\t#{qual}\t#{dist}\t#{tail}\t#{subs}\t#{indels}\t#{score/size}\t#{size}"
+      puts "#{num}\t#{swap}\t#{trans}\t#{homo}\t#{rhomo}\t#{env}\t#{qual}\t#{dist}\t#{tail}\t#{subs}\t#{indels}\t#{score/size}\t#{size}"
       
     end
   end

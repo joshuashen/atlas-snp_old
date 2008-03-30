@@ -18,7 +18,9 @@ opts = GetoptLong.new(
     ["--xmOnly", "-z", GetoptLong::NO_ARGUMENT],
     ["--blatOnly","-a", GetoptLong::NO_ARGUMENT],
     ["--noparse","-e", GetoptLong::NO_ARGUMENT],
-    ["--short", "-s", GetoptLong::NO_ARGUMENT]
+    ["--short", "-s", GetoptLong::NO_ARGUMENT],
+    ["--debug", "-g", GetoptLong::NO_ARGUMENT],
+    ["--alignments", "-d", GetoptLong::NO_ARGUMENT]
 )
 
 optHash = {}
@@ -308,4 +310,8 @@ end
 xmo.puts str.scan(/\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\d+\s+\d+\s+\(\d+\).*|^\s[S|D|I]\S*\s+\d+\s+\S+\(\d+\).*/)
 
 xmo.close
-system("rm -rf #{xmDirabs}")
+
+
+if !optHash.key?("--debug")
+  system("rm -rf #{xmDirabs}")
+end
