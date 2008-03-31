@@ -84,6 +84,7 @@ def compute(name, ref, span, snps)
   while array.size > 0
     s = array.shift
     e = array.shift
+    $stderr.puts "#{ref}\t#{s}\t#{e}"
     (s..e).each do |i|
       $coverage[ref][i] += 1
     end
