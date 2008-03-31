@@ -148,6 +148,7 @@ File.new(optHash["--input"], "r").each do  |line|
     readinfo.split(";").each do |r|
       if r=~ /^(\S+)\((\d+)\)\S+\((\d+)\)\S+([+|-])\S+\((\S+)\/(\S+)\/(\d+)\)(\S+)/
         base,qual,dist,dir,sub,indel,tail,swap = $1,$2.to_i,$3.to_i,$4,$5.to_f,$6.to_f,$7.to_i,$8
+        next if base != snpbase
         dirs[dir] += 1
         if base == 'N'
           logOdd = 0

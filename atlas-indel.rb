@@ -144,7 +144,7 @@ def pileup(span, ref)
   while array.size > 0
     ss = array.shift
     ee = array.shift 
-    $stderr.puts "#{ref}\t#{ss}\t#{ee}"
+#    $stderr.puts "#{ref}\t#{ss}\t#{ee}"
     $cov[ref].fill((ss+1)..(ee-1)) {|i| $cov[ref][i] + 1 }
     #    ((ss+1)..(ee-1)).each do |i|
     #      $cov[ref][i] += 1
