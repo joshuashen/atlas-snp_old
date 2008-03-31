@@ -127,33 +127,24 @@ end
 # store the coverage information in a temporary file to save RAM
 def pileup(span, ref)
   return if span.size < 1
-#  return if span.size < 1 or !$seq.key?(ref)
-  # $stderr.puts "#{span.join(' ')}\t#{ref}"
-#  head = span.shift
-#  ss, ee = head[0], head[1]
-#  array = []
-#  array << ss
-#  span.each do |breaks|
-#    array << breaks[0]
-#    array << breaks[1]
-#  end
-#  array << ee
+  span.sort! {|a,b| a[0] <=> b[0]}
+  
+  head = span.shift
+  ss, ee = head[0], head[1]
+  array = []
+  array << ss
+  span.each do |breaks|
+    array << breaks[0]
+    array << breaks[1]
+  end
+  array << ee
 
-  $stderr.puts "#{ref}\t#{span.size}\t#{span.join('   ')}"
-#  while span.size > 0 
-#    s = span.shift
-#    e = span.shift
-  #  $stderr.puts "#{ref}\t#{s}\t#{e}"   
-#    $atlas[ref] << [s,e]
-#    $tempfile.puts "#{ref}\t#{s}\t#{e}"
- #   ((s+1)..(e-1)).each do |i|
- #     $cov[ref][i] += 1
- #   end
-#    $stderr.puts "#{s}"
-#    $stderr.puts "#{e}"
-  0.upto(span.size/2 - 1) do |j|
-    ss = span[j*2]
-    ee = span[j*2+1]
+#  $stderr.puts "#{ref}\t#{span.size}\t#{span.join('   ')}"
+
+  while array.size > 0
+    ss = array.shift
+    ee = array.shift 
+    $stderr.puts "#{ref}\t#{ss}\t#{ee}"
     $cov[ref].fill((ss+1)..(ee-1)) {|i| $cov[ref][i] + 1 }
     #    ((ss+1)..(ee-1)).each do |i|
     #      $cov[ref][i] += 1
@@ -196,7 +187,7 @@ File.new(optHash["--crossmatch"], "r").each do |line|
   if line.match(pattern)
     pileup(span, ref)
     score,sub,dels,ins,query,qstart,qend,qright,tstrand,target,d1,d2,d3,lab =$1.to_f,$2.to_f,$3.to_f,$4.to_f,$5,$6.to_i,$7.to_i,$8.to_i,$9,$10,$11,$12,$13,$14
-##    span  = []
+    span  = []
     if sub > $maxsub or dels + ins > $maxindel 
       flag = 0
       next
@@ -227,7 +218,7 @@ File.new(optHash["--crossmatch"], "r").each do |line|
     s = tstart + offset
     e = tend + offset
 
-    span = [s, e]
+    span << [s, e]
     $stderr.puts query
   elsif flag > 0 and line=~ /^\s(\S+)\s+(\d+)\s+(\S+)\(\d+\)\s+(\d+)\s+(\S+)/
     type, qplace, tplace,envs = $1, $2.to_i, $4.to_i,$5
@@ -258,8 +249,8 @@ File.new(optHash["--crossmatch"], "r").each do |line|
       $deletions[ref][tstart][indel] = 1
 #      $deletions[ref][tstart][:through] = 0
 #      $deletion[ref][tstart][:b2] = 0
-#      span << [tstart, tend]
-      span.insert(-2, tstart, tend)
+      span << [tstart, tend]
+
     elsif type =~ /^I/
       qstart = qplace 
       tstart = tplace  
@@ -283,8 +274,8 @@ File.new(optHash["--crossmatch"], "r").each do |line|
       indel = Indel.new(query,ref, qstart,qend, tstart, tend, dir,sub,dels,ins,length,envs,"I")
       $insertions[ref][tstart][indel] = 1
 #      $insertions[ref][tstart][:through]  = 0
-#      span << [tstart, tend + 1]
-      span.insert(-2, tstart, tend+1)
+      span << [tstart, tend + 1]
+
     end
   end
 end

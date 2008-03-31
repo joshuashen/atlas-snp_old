@@ -69,7 +69,8 @@ $seq = {}
 
 def compute(name, ref, span, snps)
   return if span.length < 1
-  
+
+  span.sort! {|a,b| a[0] <=> b[0]}
   head = span.shift
   ss,ee = head[0],head[1]
   array = []
@@ -84,7 +85,7 @@ def compute(name, ref, span, snps)
   while array.size > 0
     s = array.shift
     e = array.shift
-    $stderr.puts "#{ref}\t#{s}\t#{e}"
+#    $stderr.puts "#{ref}\t#{s}\t#{e}"
     (s..e).each do |i|
       $coverage[ref][i] += 1
     end
