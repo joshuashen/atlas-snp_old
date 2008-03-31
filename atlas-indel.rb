@@ -56,18 +56,17 @@ else
   $minIndelSize = 2
 end
 
-
+$tempfile =File.new("atlas-indel-temp-piles.txt","w")
 
 $seq = {}
 
 # for unlimited-dimensional hash
 hashMaker = proc {|h,k| h[k]=Hash.new(&hashMaker)}
 
-$deletions = Hash.new(&hashMaker)
-$insertions = Hash.new(&hashMaker)
+$deletions = {} # Hash.new(&hashMaker)
+$insertions = {} # Hash.new(&hashMaker)
 
-$atlas = {} ## stores the mapping information of all reads
-$breakpoints = Hash.new(&hashMaker)
+##  $atlas = {} ## stores the mapping information of all reads
 
 class Indel 
   attr_accessor :ref, :query, :tstart, :tend, :qstart, :qend, :dir,:sub, :dels,:ins,:envs, :type, :bases, :dist3
@@ -102,7 +101,7 @@ end
 def assemble(indelarray)
   # goal: get consensus,  
 
-# rule: 1. If more than 
+# rules:
 
   bases = {}
 
@@ -123,13 +122,15 @@ def assemble(indelarray)
   return consensus
 end
 
+# store the coverage information in a temporary file to save RAM
 def pileup(span, ref)
-  return if span.size < 1 or !$atlas.key?(ref)
-  
+
+  return if span.size < 1 or !$seq.key?(ref)
+  # $stderr.puts "#{span.join(' ')}\t#{ref}"
   head = span.shift
   ss, ee = head[0], head[1]
   array = []
-  
+  array << ss
   span.each do |breaks|
     array << breaks[0]
     array << breaks[1]
@@ -139,24 +140,26 @@ def pileup(span, ref)
   while array.size > 0 
     s = array.shift
     e = array.shift
-    
-    $atlas[ref] << [s,e]
+  #  $stderr.puts "#{ref}\t#{s}\t#{e}"   
+#    $atlas[ref] << [s,e]
+    $tempfile.puts "#{ref}\t#{s}\t#{e}"
   end
-
 end
 
 ref = ''
+# read ref fasta, initialize
+
 File.new(optHash["--reference"], "r").each do |line|
   if line=~ /^>(\S+)/
     $seq[$1] = ''
     ref = $1
-    $atlas[ref] = []
+    $insertions[ref] = Hash.new(&hashMaker) 
+    $deletions[ref] = Hash.new(&hashMaker) 
+#    $atlas[ref] = []
   else
     $seq[ref] << line.chomp
   end
 end
-
-
 
 pattern=/^\s*(\d+)\s+(\d+\.\d+)\s+([0-9\.]+)\s+([0-9\.]+)\s+(\S+)\s+(\d+)\s+(\d+)\s+\((\d+)\)\s+(C*?)\s*?(\S+)\s+(\S+)\s+(\d+)\s+(\S+)\s+(\**?)/
 
@@ -170,7 +173,7 @@ span = []
 
 File.new(optHash["--crossmatch"], "r").each do |line|
   if line.match(pattern)
-    pileup(span, target)
+    pileup(span, ref)
     score,sub,dels,ins,query,qstart,qend,qright,tstrand,target,d1,d2,d3,lab =$1.to_f,$2.to_f,$3.to_f,$4.to_f,$5,$6.to_i,$7.to_i,$8.to_i,$9,$10,$11,$12,$13,$14
     span  = []
     if sub > $maxsub or dels + ins > $maxindel 
@@ -257,7 +260,9 @@ File.new(optHash["--crossmatch"], "r").each do |line|
     end
   end
 end
-pileup(span, target)
+pileup(span, ref)
+
+$tempfile.close
 
 $deletions.keys.sort.each do |ref|
   $deletions[ref].keys.sort.each do |s|
@@ -266,27 +271,27 @@ $deletions.keys.sort.each do |ref|
 end
 
 
-## the number of reads that walk through the break points
-$atlas.keys.sort.each do |ref|
-  $atlas[ref].each do |pile|
-    ((pile[0] + 1)..(pile[1] - 1)).each do |i|
-      if $insertions[ref].key?(i)
-        $insertions[ref][i][:through] += 1
-      end
+File.new("atlas-indel-temp-piles.txt", "r").each do |line|
+  cols = line.split(/\s+/)
 
-      if $deletions[ref].key?(i)
-        if $deletions[ref][i][:consensus].size + i -1 < pile[1] # go through
-          $deletions[ref][i][:through] += 1
-        end
-      end
+  ref,s,e = cols[0], cols[1].to_i, cols[2].to_i
+
+  ((s+1)..(e-1)).each do |i|
+    if $insertions[ref].key?(i)
+#   number of reads that walk through the break points
+      $insertions[ref][i][:through] += 1
+    end
+    
+    if $deletions[ref].key?(i) and $deletions[ref][i][:consensus].size + i -1 < e  # go through
+      $deletions[ref][i][:through] += 1
     end
   end
-  $atlas[ref] = nil
-  $seq[ref] = nil
 end
 
+$seq = nil
 
-
+# header
+puts "indel_type\tindel_size\tchr\tstart\tend\tindelbases\tnumIndelReads\tnumRefReads\tinfo_indelReads"
 
 $insertions.keys.sort.each do |ref|
   $insertions[ref].keys.sort.each do |s|
@@ -309,3 +314,7 @@ $deletions.keys.sort.each do |ref|
     print "\n"
   end
 end
+
+# $tempfile.close
+
+File.delete("atlas-indel-temp-piles.txt")
