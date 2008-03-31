@@ -1,6 +1,9 @@
 ## synonymous, non-synonymous, etc
 
-# use BioRuby,
+# use BioRuby, could be replaced by simple Hash with a codon table.
+
+# todo: output gene sequences with mutation in it -- for calculation of KaKs. 
+ # question: how to deal with heterozygous SNPs?
 
 #  input : reference sequence, exon coordinates, and SNP list
 
@@ -11,26 +14,26 @@ $seq = {} # the DNA sequence of chromosomes
 $genes = {}  # genes,  sorted by end
 
 # codon table
-$codon = {"GCT" => 'A', "GCC" => 'A', 'GCA' => 'A', "GCG" => 'A', \
-  "CGT" => 'R', "CGC" => "R", "CGA" => 'R', 'CGG' => 'R', 'AGA' => 'R', 'AGG' => 'R', \
-  "AAT" => 'N', "AAC" => 'N', \
-  "GAT" => 'D', "GAC" => 'D', \
-  "TGT" => 'C', "TGC" => 'C', \
-  "CAA" => 'Q', "CAG" => 'Q', \
-  "GAA" => 'E', "GAG" => 'E', \
-  "GGT" => 'G', "GGC" => 'G', "GGA" => 'G', "GGG" => 'G', \
-  "CAT" => 'H', "CAC" => 'H', \ 
-  "ATT" => 'I', "ATC" => 'I', "ATA" => 'I', \
-  "ATG" => 'M', \
-  "TTA" => 'L', "TTG" => 'L', "CTT" => 'L', "CTC" => 'L', "CTA" => 'L', "CTG" => 'L', \
-  "AAA" => 'K', "AAG" => 'K', \
-  "TTT" => 'F', "TTC" => 'F', \
-  "CCT" => 'P', "CCC" => 'P', "CCA" => 'P', "CCG" => 'P', \
-  "TCT" => 'S', "TCC" => 'S', "TCA" => 'S', "TCG" => 'S', "AGT" => 'S', "AGC" => 'S', \
-  "ACT" => 'T', "ACC" => 'T', "ACA" => 'T', "ACG" => 'T', \
-  "TGG" => 'W', \
-  "TAT" => 'Y', "TAC" => 'Y', \
-  "GTT" => 'V', "GTC" => 'V', "GTA" => 'V', "GTG" => 'V', \
+$codon = {"GCT" => 'A', "GCC" => 'A', 'GCA' => 'A', "GCG" => 'A', 
+  "CGT" => 'R', "CGC" => "R", "CGA" => 'R', 'CGG' => 'R', 'AGA' => 'R', 'AGG' => 'R', 
+  "AAT" => 'N', "AAC" => 'N', 
+  "GAT" => 'D', "GAC" => 'D', 
+  "TGT" => 'C', "TGC" => 'C', 
+  "CAA" => 'Q', "CAG" => 'Q', 
+  "GAA" => 'E', "GAG" => 'E', 
+  "GGT" => 'G', "GGC" => 'G', "GGA" => 'G', "GGG" => 'G', 
+  "CAT" => 'H', "CAC" => 'H',
+  "ATT" => 'I', "ATC" => 'I', "ATA" => 'I', 
+  "ATG" => 'M', 
+  "TTA" => 'L', "TTG" => 'L', "CTT" => 'L', "CTC" => 'L', "CTA" => 'L', "CTG" => 'L', 
+  "AAA" => 'K', "AAG" => 'K', 
+  "TTT" => 'F', "TTC" => 'F', 
+  "CCT" => 'P', "CCC" => 'P', "CCA" => 'P', "CCG" => 'P', 
+  "TCT" => 'S', "TCC" => 'S', "TCA" => 'S', "TCG" => 'S', "AGT" => 'S', "AGC" => 'S', 
+  "ACT" => 'T', "ACC" => 'T', "ACA" => 'T', "ACG" => 'T', 
+  "TGG" => 'W', 
+  "TAT" => 'Y', "TAC" => 'Y', 
+  "GTT" => 'V', "GTC" => 'V', "GTA" => 'V', "GTG" => 'V', 
   "TAG" => '*', "TGA" => '*', "TAA" => '*' }
 
 
@@ -51,8 +54,10 @@ def extractseq(chr)
     end
     if gene.strand == '+'
       gene.coding = coding
+      gene.mutant = String.new(gene.coding)
     else
       gene.coding = coding.reverse.tr('ATGCatgc', 'TACGtacg') # reverse complementary
+      gene.mutant = String.new(gene.coding)
     end
   end
   $seq[chr] = ''
@@ -61,7 +66,7 @@ end
 
 
 class Gene
-  attr_accessor :chr, :orfs, :name, :nick, :coding, :strand, :exonStart, :exonEnd
+  attr_accessor :chr, :orfs, :name, :nick, :coding, :strand, :exonStart, :exonEnd, :mutant, :cdsStart, :cdsEnd
 
   def initialize(chr,exonStart, exonEnd, orfs,strand,name,nick)
     @chr = chr
@@ -106,10 +111,13 @@ class Gene
             $stderr.puts "#{@name} #{@strand}  #{@coding.length}   #{s}  #{e}  #{oricodon}  #{base} #{frame} #{pos} #{shift}"
             if frame == 0
               mutcodon = base + @coding[s+1..e]
+              @mutant[s,1] = base
             elsif frame == 1  # the second base
               mutcodon = oricodon[0,1] + base + oricodon[2,1]
+              @mutant[s+1,1] = base
             elsif frame == 2
               mutcodon = oricodon[0..1] + base
+              @mutant[s+2,1] = base
             end
             oriaa = translate(oricodon)
             mutaa = translate(mutcodon)
@@ -140,10 +148,16 @@ class Gene
             $stderr.puts "#{@name} #{@strand}  #{@coding.length}   #{s}  #{e}  #{oricodon}  #{base} #{frame} #{pos} #{shift} #{orf.join(" ")}"
             if frame == 0
               mutcodon = base + @coding[s+1..e]
+              @mutant[s,1] = base
+              
             elsif frame == 1  # the second base 
               mutcodon = oricodon[0,1] + base + oricodon[2,1]
+              @mutant[s+1,1] = base
+              
             elsif frame == 2
               mutcodon = oricodon[0..1] + base
+              @mutant[s+2,1] = base
+              
             end
             oriaa = translate(oricodon)
             mutaa = translate(mutcodon)
@@ -171,6 +185,7 @@ opts = GetoptLong.new(
     ["--snplist", "-s", GetoptLong::REQUIRED_ARGUMENT],
     ["--reference", "-r", GetoptLong::REQUIRED_ARGUMENT],
     ["--genes", "-g", GetoptLong::REQUIRED_ARGUMENT],
+    ["--output", "-o", GetoptLong::OPTIONAL_ARGUMENT],
     ["--help", "-h", GetoptLong::NO_ARGUMENT]
 )
 
@@ -180,10 +195,15 @@ opts.each do |opt, arg|
 end
 
 if optHash.key?("--help") 
-  $stderr.puts "Usage: ruby __.rb -s snp_list -r reference.fa -g genes_exon_coordinates > snp.annotated"
+  $stderr.puts "Usage: ruby __.rb -s snp_list -r reference.fa -g genes_exon_coordinates [ -o <output_prefix> ]"
   exit
 end
 
+if optHash.key?("--output")
+  $prefix = optHash["--output"]
+else
+  $prefix = optHash["--snplist"]
+end
 
 
 File.new(optHash["--genes"], "r").each do |line|
@@ -240,6 +260,9 @@ File.new(optHash["--reference"], "r").each do |line|
 end
 extractseq(ref)
     
+ao = File.new($prefix + ".Annotation", "w")
+so = File.new($prefix + ".gene_CDS.fa", "w")
+mo = File.new($prefix + ".gene_CDS_mutant.fa", "w")
 
 # assuming SNPs are sorted by base positions
 
@@ -248,7 +271,7 @@ $header = {'refName' => 0, 'coordinate' => 1, 'refBase' =>2, 'homopolymer' => 3,
 # $queue = {}
 File.new(optHash["--snplist"], "r").each do |line| 
   line.chomp!
-  print line + "\t"
+  ao.print line + "\t"
   cols = line.split(/\s+/)
   if cols[0] == 'refName'  # header line
     0.upto(cols.size - 1) do |i|
@@ -259,8 +282,7 @@ File.new(optHash["--snplist"], "r").each do |line|
     next unless $genes.key?(ref)
     
     status = 'inter-genic'
-## check if the SNP 
-    #    $genes[ref].each do |gene|
+
     $bookmark[ref].upto(($genes[ref].size - 1)) do |i|
       gene = $genes[ref][i]
       if gene.exonStart > pos  #  need optimization for speed
@@ -269,18 +291,32 @@ File.new(optHash["--snplist"], "r").each do |line|
         $bookmark[ref] = i
       else #  in the gene
         status = gene.mutate(pos,snpbase)
-        print "#{gene.name}:#{status};"
+        ao.print "#{gene.name}:#{status};"
 #        status = 'genic'
       end
     end
 
     if status == 'inter-genic'
-      print status
+      ao.print status
     end
   end
-  print "\n"
+  ao.print "\n"
 end
 
+ao.close
 
-        
-        
+$genes.each_key do |ref|
+  $genes[ref].sort {|a,b| a.exonStart <=> b.exonStart}.each do |gene|
+    next if gene.orfs.size < 1
+    $stderr.puts "\n#{gene.name}"
+
+    so.puts ">#{gene.name}\tori\t#{ref}\t#{gene.cdsStart}\t#{gene.cdsEnd}\t#{gene.strand}\t#{gene.nick}"
+    so.puts "#{gene.coding}"
+    
+    mo.puts ">#{gene.name}\tmut\t#{ref}\t#{gene.cdsStart}\t#{gene.cdsEnd}\t#{gene.strand}\t#{gene.nick}"
+    mo.puts "#{gene.mutant}"
+  end
+end
+
+mo.close
+so.close
