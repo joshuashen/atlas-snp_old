@@ -78,14 +78,14 @@ AATTAGATTTTCTTTTTTTTTCTGATTTTAAAAACAAAAAAAAAACAAAAATTTATAAAT
 The program breaks the reference sequence into smaller pieces to avoid performance issues with cross_match alignment. 
 
 -f 	frequency cutoff of 11-mers, optional, default 1024
-The most important performance boost of BLAT comes from –ooc option, which enables the program to ignore over-represented kmers in the genome in the alignment seeding stage. 1024 is optimized for mammalian genomes. 100~200 is best for smaller or less complex genomes.
+The most important performance boost of BLAT comes from -ooc option, which enables the program to ignore over-represented kmers in the genome in the alignment seeding stage. 1024 is optimized for mammalian genomes. 100~200 is best for smaller or less complex genomes.
  
 -b 	UNIX path to the BLAT program, optional
 
 If BLAT is not accessible by default in the user's shell, the path to the blat program can be provided by this option. Note: it is best practice to add this path into one's PATH shell environment.
 
 Output
-This command creates a directory named by reference.fasta with a suffix "Env4mapping". It contains relevant information and data for subsequent blat and cross_match steps. The input reference fasta file is split into less than 900Mbps fragments to ensure running BLAT smoothly on servers with smaller than 2G RAM. The –ooc file is created according to command-line provided parameter. The reference sequence is also split into much smaller pieces, default at 100Kbps, to serve local alignment through cross_match.  Some meta-information was stored in a flat file inside the directory.
+This command creates a directory named by reference.fasta with a suffix "Env4mapping". It contains relevant information and data for subsequent blat and cross_match steps. The input reference fasta file is split into less than 900Mbps fragments to ensure running BLAT smoothly on servers with smaller than 2G RAM. The -ooc file is created according to command-line provided parameter. The reference sequence is also split into much smaller pieces, default at 100Kbps, to serve local alignment through cross_match.  Some meta-information was stored in a flat file inside the directory.
 
 Computation requirement and performance
 This step is fairly quick. The RAM usage depends on the size of the reference genome. It takes about 3.0G for the human genome. 
