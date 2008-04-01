@@ -208,7 +208,7 @@ if optHash.key?("--reference")
   $coverage.keys.sort.each do |ref|
     ##  refout.puts ">#{ref}"
     $coverage[ref].keys.sort {|a,b| a<=>b}.each do |i|
-      refout.puts "#{ref}\t#{i}\t#{$coverage[ref][i]}"
+      refout.syswrite "#{ref}\t#{i}\t#{$coverage[ref][i]}\n"
     end
     
   end
@@ -230,43 +230,30 @@ refsum.close
 if optHash.key?("--target")
 
   tbasecov = File.new($prefix + ".target_base_cov", "w")
+
 #  tout = File.new($prefix + ".target_summary", "w")
 
-  
   $feature.each_key do |ref|
     covarray = $coverage.delete(ref).to_a.sort {|a,b| a[0]<=> b[0]}
     $feature[ref].keys.sort.each do |ff|
       s ,e,dir = $feature[ref][ff]
 
-      # Hash.reject returns a hash, but Hash.select returns an array
-#      subhash = $coverage[ref].reject {|k,v| (k <  s or k > e  )} 
-      suba = covarray.select {|i| i[0] >=s and i[0] <= e}
-      
       if dir > 0 
         num = 1
       else
         num = e - s + 1
       end
 
-#      subhash.keys.sort.each do |j|
-      suba.each do |i|
-#        tbasecov.puts "#{ff}\t#{num}\t#{$coverage[ref][j]}\t#{ref}\t#{j}"
-        tbasecov.puts "#{ff}\t#{num}\t#{i[1]}\t#{ref}\t#{i[0]}"
+      #      subhash.keys.sort.each do |j|
+      covarray.select {|i| i[0] >=s and i[0] <= e}.each do |i|
+        tbasecov.syswrite "#{ff}\t#{num}\t#{i[1]}\t#{ref}\t#{i[0]}\n"
         num += dir
       end
 
- #     cc = subhash.values.select {|i| i>0}.size
- #     tout.puts "#{ff}\t#{ref}\t#{s}\t#{e}\t#{e-s+1}\t#{cc}\t#{cc.to_f/(e-s+1)}"
     end
   end
   tbasecov.close
   
-  # cova = $coverage[ref].reject {|p, c| p <  s-1 or p > e - 1}.values   
-  #    avg = cova.average
-  #    stderr = cova.std
-  #    tout.puts "#{ff}\t#{ref}\t#{s}\t#{e}\t#{avg}\t#{stderr}"
-  
-#  tout.close
 end
 
 exit

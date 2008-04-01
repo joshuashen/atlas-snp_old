@@ -299,6 +299,17 @@ end
 snpout.close
 
 
+covout = File.new(optHash["--output"]+".ref.depth_cov", 'w')
+
+$coverage.keys.sort.each do |ref|
+  covout.syswrite(">#{ref} depth-coverage\n")
+  s = $coverage[ref].size 
+  0.upto(s/80) do |i|
+    covout.syswrite($coverage[ref][(i*80+1)..(i+1)*80].join(' ') + "\n")
+  end
+end
+covout.close
+
 exit 
 
 
