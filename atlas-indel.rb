@@ -28,7 +28,7 @@ end
 
 if optHash.key?("--help")
   $stderr.puts "Usage: ruby __.rb -x cross_match_result -r reference.fasta [options] > output"
-  $stderr.puts "  Warning: it's slow."
+  $stderr.puts "  Warning: it requires large memory: about 2G for a fly genome, and 28G for the complete human genome."
   exit
 end
 
@@ -126,7 +126,11 @@ end
 
 # store the coverage information in a temporary file to save RAM
 def pileup(span, ref)
-  return if span.size < 1
+#   return if span.size < 1
+  if span.size < 1 or !$cov.key?(ref)
+ ##   $stderr.puts "problematic: #{ref} \t#{span}"
+    return
+  end
   span.sort! {|a,b| a[0] <=> b[0]}
   
   head = span.shift
@@ -198,9 +202,11 @@ File.new(optHash["--crossmatch"], "r").each do |line|
     if target=~ /^(\S+)\_(\d+)\_(\d+)$/
       ref = $1
       offset = $2.to_i - 1
+    elsif target=~ /^(\S+)$/
+      ref = $1
+      offset = 0
     end
 
-   
     if d1 =~ /\((\d+)\)/
       tright, tstart, tend = $1.to_i, d2.to_i, d3.to_i
     elsif d3=~ /\((\d+)\)/
@@ -219,7 +225,7 @@ File.new(optHash["--crossmatch"], "r").each do |line|
     e = tend + offset
 
     span << [s, e]
-    $stderr.puts query
+#    $stderr.puts query
   elsif flag > 0 and line=~ /^\s(\S+)\s+(\d+)\s+(\S+)\(\d+\)\s+(\d+)\s+(\S+)/
     type, qplace, tplace,envs = $1, $2.to_i, $4.to_i,$5
 #    if type =~ /^D\-(\d+)/
