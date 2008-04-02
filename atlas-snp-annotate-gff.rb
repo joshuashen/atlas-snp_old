@@ -89,7 +89,7 @@ class Gene
             e = s + 2
             aapos = s / 3 + 1
             oricodon = @coding[s..e]
-            $stderr.puts "#{@geneName} #{@strand}  #{@coding.length}   #{s}  #{e}  #{oricodon}  #{base} #{frame} #{pos} #{shift} #{orf.join(" ")}"
+          #  $stderr.puts "#{@geneName} #{@strand}  #{@coding.length}   #{s}  #{e}  #{oricodon}  #{base} #{frame} #{pos} #{shift} #{orf.join(" ")}"
             if frame == 0
               mutcodon = base + @coding[s+1..e]
               @mutant[s,1] = base
