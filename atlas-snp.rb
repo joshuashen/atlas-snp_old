@@ -11,6 +11,7 @@ opts = GetoptLong.new(
     ["--crossmatch", "-x", GetoptLong::REQUIRED_ARGUMENT],
     ["--reference", "-r", GetoptLong::REQUIRED_ARGUMENT],
     ["--output", "-o", GetoptLong::REQUIRED_ARGUMENT],
+    ["--coverage", "-c", GetoptLong::OPTIONAL_ARGUMENT],
     ["--minscore", "-m", GetoptLong::OPTIONAL_ARGUMENT],
     ["--maxsub", "-s", GetoptLong::OPTIONAL_ARGUMENT],
     ["--maxindel", "-g", GetoptLong::OPTIONAL_ARGUMENT],
@@ -26,7 +27,7 @@ end
 # $stderr.puts "Note: This program requires large RAM usage. Please run it on servers equipped with large memory."
 
 if optHash.key?("--help") 
-  $stderr.puts "Usage: ruby __.rb -x cross_match_output -r reference.fasta -o prefix_of_output [-m minscore -s max_substitution -g max_gap -a adjust_quality_slope]"
+  $stderr.puts "Usage: ruby __.rb -x cross_match_output -r reference.fasta -o prefix_of_output [-m minscore -s max_substitution -g max_gap -a adjust_quality_slope] [-c]"
   $stderr.puts " Note: -a specify the linear adjustment slope for quality scores. Default 0.13; 0 means no adjustment"
   exit
 end
@@ -297,6 +298,10 @@ $snp.keys.sort.each do |ref|
   end
 end
 snpout.close
+
+if !optHash.key?("--coverage")
+  exit
+end
 
 
 covout = File.new(optHash["--output"]+".ref.depth_cov", 'w')

@@ -81,6 +81,7 @@ def compute(name, ref, span)
   return if span.length < 1
   return unless $coverage.key?(ref)
 
+  span.sort! {|a,b| a[0] <=> b[0]}
   head = span.shift
   ss,ee = head[0],head[1]
   array = []

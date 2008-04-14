@@ -1,11 +1,10 @@
-## TODO:
-#  1. convert logisticP to p(error | mismatch): 1/(1+odds)
-#  2. also design a tree-based procedure and append the score in the end
+## todo: integrate HapMap allele frequency as the Prior SNP rate for known SNPs
 
-## evaluate raw SNP calls based on 
+
+## estimate the probability of error of raw SNP calls on the condition of:
 ##  1. quality scores
-#   2. longest nearby homopolymer size
-#   3. distance to 3' end
+#   2. longest homopolymer size in a 13-bp reference window centered on the substitution base
+#   3. distance to 3' end on the read
 #   4. "swapped" bases  -- specific to 454 sequencing
 #  ideas wanted:   *agreement among mapped reads*
 
@@ -17,6 +16,8 @@
 ##    trained beta:  
 #       (Intercept)      y$swap      y$homo      y$qual     y$dist3 
 ##       1.37124483 -2.08600342 -0.63242288  0.03681018  0.01027486
+##
+##  p-value: all < e-16
 #
 # -------------------------------------------------------------------
 ## II. Bayesian inference:
@@ -25,7 +26,7 @@
 # or
 #  P(error | logisticP) = p(logisticP | error ) * p(error) / P(logisticP)
 #
-### where p(error) = error rate, about 0.2%
+### where p(error) = error rate, about 0.08%
 ##        p(logisticP | error) = distribution from logistic model
 ##        p(logisticP)  = SUM(P(logisticP |error) * P(error) + P(logisticP | SNP) * P(SNP) ) and might be a constant
 
@@ -197,7 +198,7 @@ File.new(optHash["--input"], "r").each do  |line|
         print "#{r}(#{logOdd})(#{errorPosteriorFull});"
       end
     end
-    eP = (eP*10000).round/10000.0
+    eP = (eP*100000).round/100000.0
     x = [dirs['+'], dirs['-']].min
 
 ## Binomial distribution:

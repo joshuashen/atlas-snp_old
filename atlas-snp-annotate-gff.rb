@@ -306,10 +306,21 @@ $genes.each_key do |ref|
 #    $stderr.puts "\n#{gene.geneID}"
 
     so.puts ">#{gene.geneID}\tori\t#{ref}\t#{gene.cdsStart}\t#{gene.cdsEnd}\t#{gene.strand}\t#{gene.geneName}"
-    so.puts "#{gene.coding}"
+    ss = gene.coding.size
+    0.upto(ss/80) do |i|
+      so.print(gene.coding[i*80..(i+1)*80-1] + "\n")
+    end
+    
+      
+#    so.puts "#{gene.coding}"
 
     mo.puts ">#{gene.geneID}\tmut\t#{ref}\t#{gene.cdsStart}\t#{gene.cdsEnd}\t#{gene.strand}\t#{gene.geneName}"
-    mo.puts "#{gene.mutant}"
+    ss = gene.mutant.size
+     0.upto(ss/80) do |i|
+      mo.print(gene.mutant[i*80..(i+1)*80-1] + "\n")
+    end
+ 
+#    mo.puts "#{gene.mutant}"
   end
 end
 
