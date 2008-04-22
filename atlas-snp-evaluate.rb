@@ -198,7 +198,8 @@ File.new(optHash["--input"], "r").each do  |line|
         print "#{r}(#{logOdd})(#{errorPosteriorFull});"
       end
     end
-    eP = (eP*100000).round/100000.0
+
+#    eP = (eP*).round/100000.0
     x = [dirs['+'], dirs['-']].min
 
 ## Binomial distribution:
