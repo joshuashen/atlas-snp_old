@@ -14,6 +14,7 @@
 
 You can find blat binaries on Jim Kent's website: http://hgwdev.cse.ucsc.edu/~kent/exe/
 And cross_match at: http://www.phrap.org/consed/consed.html#howToGet
+After installing BLAT and cross_match, please make sure to put the path to these two programs in $PATH of your shell environment. 
 
 -----------------------
 
