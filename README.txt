@@ -20,6 +20,11 @@ After installing BLAT and cross_match, please make sure to put the path to these
 
 *What's new*
 
+Version 0.9.8, March 31st, 2008
+1. atlas-indel.rb It calls small to mid-size indels from cross_match result. It outputs the number of reads showing the indel as well as the number of reads that walk through the indel break points. I'm not happy with the computation performance of this program yet. But it's ok for small tasks, i.e. small genomes or targeted regions in large genomes.
+
+2. atlas-snp-annotate.rb It categorizes SNPs into synonymous/non-synonymous/intronic/inter-genic, based on a gene annotation table in UCSC "known-gene" format. It also prints original and mutated gene sequences, for the purpose of calculating KaKs? through other programs (such as Matlab or R).
+
 Version 0.9.7, March 17th, 2008
  - Replace legacy perl scripts with ruby. 
  - Add README file in the package
