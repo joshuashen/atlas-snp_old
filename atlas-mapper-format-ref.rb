@@ -35,6 +35,11 @@ if optHash.key?("--blat")
   blat = optHash["--blat"]
 else
   blat = "blat"
+  tryblat = `which blat`
+  if tryblat == '' # no blat found in the PATH
+    $stderr.puts "Failed to find BLAT: quit the program. Please make sure BLAT is installed in the system and you have put the path to BLAT in $PATH of your shell environment."
+    exit;
+  end
 end
 
 oocCut = 1024

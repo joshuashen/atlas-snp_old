@@ -50,12 +50,23 @@ if optHash.key?("--blat")
   blat = File.expand_path(optHash["--blat"])
 else
   blat = "blat"
+  tryblat = `which blat`
+  if tryblat =='' # no blat found in the PATH                                                                          
+    $stderr.puts "Failed to find BLAT: quit the program. Please make sure BLAT is installed in the system and you have put the path to BLAT in $PATH of your shell environment."
+    exit;
+  end
 end
 
 if optHash.key?("--crossmatch")
   crossMatch = File.expand_path(optHash["--crossmatch"])
 else
   crossMatch = "cross_match"
+  tryblat = `which cross_match`
+  if tryblat =='' # no blat found in the PATH                                                                          
+    $stderr.puts "Failed to find cross_match: quit the program. Please make sure cross_match is installed in the system and you have put the path to cross_match in $PATH of your shell environment."
+    exit;
+  end
+
 end
 
 # from cross_match document:
