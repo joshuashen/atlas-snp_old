@@ -12,6 +12,7 @@ opts = GetoptLong.new(
     ["--reference", "-r", GetoptLong::REQUIRED_ARGUMENT],
     ["--length", "-l", GetoptLong::OPTIONAL_ARGUMENT],
     ["--freq","-f", GetoptLong::OPTIONAL_ARGUMENT],
+    ["--division", "-d", GetoptLong::OPTIONAL_ARGUMENT],
     ["--blat", "-b", GetoptLong::OPTIONAL_ARGUMENT],
     ["--help", "-h", GetoptLong::NO_ARGUMENT]
 )
@@ -46,7 +47,7 @@ oocCut = 1024
 kmer = 11
 pieceLength = 100000 # default 100Kbp
 overlap = 5000
-
+divisions = 900000000 
 
 if optHash.key?("--freq")
   oocCut = optHash["--freq"].to_i
@@ -54,6 +55,10 @@ end
 
 if optHash.key?("--length")
   pieceLength = optHash["--length"].to_i
+end
+
+if optHash.key?("--division")
+  divisions = optHash["--division"].to_i
 end
 
 envDir = optHash["--reference"] + '.Env4mapping'
@@ -85,7 +90,7 @@ files << fo
 seq = 0
 File.new(ref,'r').each do |line|
   if line=~ /^>(\S+)/
-    if seq >= 900000000
+    if seq >= divisions
       seq = 0
       fout.close
       num += 1
