@@ -20,6 +20,10 @@ After installing BLAT and cross_match, please make sure to put the path to these
 
 *What's new*
 
+Version 0.9.8.6, May 20, 2008
+
+...
+
 Version 0.9.8, March 31st, 2008
 1. atlas-indel.rb It calls small to mid-size indels from cross_match result. It outputs the number of reads showing the indel as well as the number of reads that walk through the indel break points. I'm not happy with the computation performance of this program yet. But it's ok for small tasks, i.e. small genomes or targeted regions in large genomes.
 
