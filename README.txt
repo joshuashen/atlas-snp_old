@@ -1,12 +1,17 @@
+Atlas-SNP is a tool of mapping reads and calling SNPs for re-sequencing projects. The current version is optimized for 454-FLX. The statistical framework of assessing SNP accuracy and genotyping is generally applicable to most of next-generation sequencing technologies.
+
+
 *Quick start*
 
+0. Get the package at: http://code.google.com/p/atlas-snp/
 1.  ruby atlas-mapper-format-ref.rb  -r reference.fasta    ## format reference
 2.1 ruby split-fasta-to-batches.rb -s input.fasta -p prefix_for_output -l length_for_each_batch -q  ## split the reads into smaller batches
 2.2 ruby atlas-mapper.rb -q reads.fasta -r reference.fasta  ## map and align the reads (a batch) onto the reference
 3.  ruby atlas-snp.rb -x cross_match_output -r reference.fasta -o prefix_of_outputs ## calling candidate SNPs
 4.  ruby atlas-snp-evaluate.rb -i SNP.list -e overall_error_rate -s estimated_SNP_rate > SNP.list.eva  ## evaluate the error probability of each candidate SNP
 
-*Requirement*
+*System Requirement*
+
  - ruby
  - blat
  - cross_match
@@ -16,59 +21,11 @@ You can find blat binaries on Jim Kent's website: http://hgwdev.cse.ucsc.edu/~ke
 And cross_match at: http://www.phrap.org/consed/consed.html#howToGet
 After installing BLAT and cross_match, please make sure to put the path to these two programs in $PATH of your shell environment. 
 
------------------------
-
-*What's new*
-
-Version 0.9.8.6, May 20, 2008
-
-...
-
-Version 0.9.8, March 31st, 2008
-1. atlas-indel.rb It calls small to mid-size indels from cross_match result. It outputs the number of reads showing the indel as well as the number of reads that walk through the indel break points. I'm not happy with the computation performance of this program yet. But it's ok for small tasks, i.e. small genomes or targeted regions in large genomes.
-
-2. atlas-snp-annotate.rb It categorizes SNPs into synonymous/non-synonymous/intronic/inter-genic, based on a gene annotation table in UCSC "known-gene" format. It also prints original and mutated gene sequences, for the purpose of calculating KaKs? through other programs (such as Matlab or R).
-
-Version 0.9.7, March 17th, 2008
- - Replace legacy perl scripts with ruby. 
- - Add README file in the package
- - Change the header rows of atlas-snp.rb and atlas-snp-evaluate.rb output
-
-Version 0.9.6, March 08th, 2008
-A few Incremental changes, including:
-
-1. the -t option of atlas-mapper.rb. discarding reads with large tails or large insertions, since they are very likely to be from paralogs.
-2. change default values of -s and -e of atlas-snp-evaluate.rb
-
-Version 0.9.5, March 03rd, 2008
-atlas-snp-evaluate.rb: SNP evaluation program based on logistic regression and Bayesian inference. The supervised learning procedure was trained on True/False SNP sets from Drosophila melanogaster 454-FLX runs. The logistic regression procedure on each read takes account of:
- quality scores
- longest nearby homopolymer size
- distance to 3' end
- "swapped" bases
-
-P(error | all 454 substitutions on this base) is appended in the last column. For each read showing the "SNP", P(error | substitution) is appended in the last () field.
-
-Version 0.9.4, February 29th, 2008
-More information in the raw SNP output;
-Retooled coverage calculation.
-
-Version 0.9.3
-Fix a bug in atlas-snp.rb output format
-
-Version 0.9.2
-1. atlas-mapper-format-ref.rb
-
-Changes for limiting the memory usage of a single BLAT job to less than 2G. Record some meta information in a flat file. Note: re-running this step is a prerequisite of downstream steps.
-
-2. atlas-mapper-do.rb is renamed to atlas-mapper.rb
-Improvement on BLAT memory usage and cross_match output IO. Significant changes on how reads in a batch are distributed into smaller batches for doing cross_match against reference.
+The ruby code is platform-independent.
 
 ------------
 
 *Protocol*
-
-Code distribution: open access at http://code.google.com/p/atlas-snp/
 
 Step 1. Creating the reference environment.
 
@@ -85,10 +42,10 @@ TTTTTTTTTTTTTTTTTTTTTTTTTATGTATGACACAATCATTAAATCATTACACATACC
 AATTAGATTTTCTTTTTTTTTCTGATTTTAAAAACAAAAAAAAAACAAAAATTTATAAAT
 
 -l 	length of pieces  optional, default value 100000
-The program breaks the reference sequence into smaller pieces to avoid performance issues with cross_match alignment. 
+The program breaks the reference sequence into smaller pieces to avoid performance issues when running cross_match for sequence alignment. 
 
 -f 	frequency cutoff of 11-mers, optional, default 1024
-The most important performance boost of BLAT comes from -ooc option, which enables the program to ignore over-represented kmers in the genome in the alignment seeding stage. 1024 is optimized for mammalian genomes. 100~200 is best for smaller or less complex genomes.
+The most important performance boost of BLAT comes from -ooc option, which tells the program to ignore over-represented kmers in the genome in the alignment seeding stage. 1024 is optimized for mammalian genomes. 100~200 is best for smaller or less complex genomes.
  
 -b 	UNIX path to the BLAT program, optional
 
@@ -224,4 +181,51 @@ Optional
 The most important output of this program is appended in the 14th column. It is an estimation of Pr(e|c), the probability of being substitution errors of the candidate SNP site. To collect a set of high-confidence SNPs, the user can set a cutoff value for the Pr(e|c). For an example, a cutoff of Pr(e|c) at 0.05 would put an upper bound of false positive rate at about 0.05. 
 
 
+-----------------------
+
+*What's new*
+
+Version 0.9.8.6, May 20, 2008
+
+...
+
+Version 0.9.8, March 31st, 2008
+1. atlas-indel.rb It calls small to mid-size indels from cross_match result. It outputs the number of reads showing the indel as well as the number of reads that walk through the indel break points. I'm not happy with the computation performance of this program yet. But it's ok for small tasks, i.e. small genomes or targeted regions in large genomes.
+
+2. atlas-snp-annotate.rb It categorizes SNPs into synonymous/non-synonymous/intronic/inter-genic, based on a gene annotation table in UCSC "known-gene" format. It also prints original and mutated gene sequences, for the purpose of calculating KaKs? through other programs (such as Matlab or R).
+
+Version 0.9.7, March 17th, 2008
+ - Replace legacy perl scripts with ruby. 
+ - Add README file in the package
+ - Change the header rows of atlas-snp.rb and atlas-snp-evaluate.rb output
+
+Version 0.9.6, March 08th, 2008
+A few Incremental changes, including:
+
+1. the -t option of atlas-mapper.rb. discarding reads with large tails or large insertions, since they are very likely to be from paralogs.
+2. change default values of -s and -e of atlas-snp-evaluate.rb
+
+Version 0.9.5, March 03rd, 2008
+atlas-snp-evaluate.rb: SNP evaluation program based on logistic regression and Bayesian inference. The supervised learning procedure was trained on True/False SNP sets from Drosophila melanogaster 454-FLX runs. The logistic regression procedure on each read takes account of:
+ quality scores
+ longest nearby homopolymer size
+ distance to 3' end
+ "swapped" bases
+
+P(error | all 454 substitutions on this base) is appended in the last column. For each read showing the "SNP", P(error | substitution) is appended in the last () field.
+
+Version 0.9.4, February 29th, 2008
+More information in the raw SNP output;
+Retooled coverage calculation.
+
+Version 0.9.3
+Fix a bug in atlas-snp.rb output format
+
+Version 0.9.2
+1. atlas-mapper-format-ref.rb
+
+Changes for limiting the memory usage of a single BLAT job to less than 2G. Record some meta information in a flat file. Note: re-running this step is a prerequisite of downstream steps.
+
+2. atlas-mapper-do.rb is renamed to atlas-mapper.rb
+Improvement on BLAT memory usage and cross_match output IO. Significant changes on how reads in a batch are distributed into smaller batches for doing cross_match against reference.
 
