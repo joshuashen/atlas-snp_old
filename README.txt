@@ -248,9 +248,10 @@ cutoff value for the Pr(e|c). For an example, a cutoff of Pr(e|c) at 0.05 would
 put an upper bound of false positive rate at about 0.05. 
 
 
+
 -----------------------
 
-*What's new*
+*History*
 
 Version 0.9.8.6, May 20, 2008
 
