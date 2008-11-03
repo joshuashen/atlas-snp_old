@@ -155,12 +155,18 @@ def pairedEndMapping(dir, ref, flag, log, maxMismatch, maxDist)
   bfqsFreads = Dir.entries(dir).sort.select {|file| file.match("bfq$") and file.match('_1_export')}
   
   bfqsFreads.each do |fReads|
-    rReads = fReads.tr('_1_export', '_2_export')
+    rReads = fReads.sub("_1_export", "_2_export")
     r1 = dir + '/' + fReads
     r2 = dir + '/' + rReads
+    errorLog = r1 + '.stderr_log'
+    stdoutlog = r1 + '.stdout_log'
     mapresult = r1 + '.map'
+    maqstring = ''
     if File.exist?(r2)
       maqstring = "#{$maq} map  -n #{maxMismatch} -a #{maxDist}  #{mapresult}  #{ref} #{r1} #{r2} 2 >> #{log}"
+      $stderr.puts "do maq: #{maqstring}"
+    else
+      $stderr.puts "Warning: cannot find the mate pair of #{fReads} :  #{rReads}"
     end
     
     if flag == 0 ## do locally
@@ -172,10 +178,10 @@ def pairedEndMapping(dir, ref, flag, log, maxMismatch, maxDist)
       shf = File.new(r1+".sh", "w")
       shf.puts shstring
       shf.close
-      system("qsub #{r1}.sh ")
-
+      #       system("qsub #{r1}.sh -e #{errorLog} -o #{stdoutlog}")
+      
     elsif flag == 2 # bsub
-      system("bsub -o lsf.o -e lsf.e #{maqstring}")
+      system("bsub -o #{stdoutlog} -e #{errorLog} #{maqstring}")
     end
   end
   return
