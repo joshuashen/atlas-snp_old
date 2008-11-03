@@ -47,7 +47,7 @@ def main
     system("mkdir #{absOutputPath}")
   end
   $stderr.puts "convert Solexa export files into fastq files \nand split into smaller batches..."
-#   export2fastqAndDivide(absInputPath, absOutputPath, batchSize)
+
 
   if optHash.key?("--do") 
     if optHash["--do"] == "1" # write qsub scripts
@@ -57,7 +57,10 @@ def main
     else
       flag = 0  # do in a loop locally
     end
+
+    export2fastqAndDivide(absInputPath, absOutputPath, batchSize)
   else
+    ## if no do, just do maq
     flag = 0
   end
 
