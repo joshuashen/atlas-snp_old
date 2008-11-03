@@ -58,12 +58,16 @@ def main
       flag = 0  # do in a loop locally
     end
 
-    export2fastqAndDivide(absInputPath, absOutputPath, batchSize)
+
   else
     ## if no do, just do maq
     flag = 0
   end
 
+  if !optHash.key?("--nosplit")
+    export2fastqAndDivide(absInputPath, absOutputPath, batchSize)
+  end
+  
   ref = File.expand_path(optHash["--ref"])
   if !optHash["--ref"].match("bfa$") 
     system("#{$maq} fasta2bfa #{ref} #{ref}.bfa")
@@ -83,6 +87,7 @@ def getOptions
       ["--maxDist", "-a", GetoptLong::OPTIONAL_ARGUMENT],
       ["--batchSize", "-b", GetoptLong::OPTIONAL_ARGUMENT],
       ["--do", "-d", GetoptLong::OPTIONAL_ARGUMENT],
+      ["--nosplit", "-z", GetoptLong::NO_ARGUMENT],                        
       ["--help", "-h", GetoptLong::NO_ARGUMENT]
   )
 
@@ -94,12 +99,13 @@ def getOptions
 end
 
 def help 
-  $stderr.puts "Usage: ruby __.rb -i InputDir -r Reference.bfa [-b batchSize] [ --do 0] [-n maxMismatch] [-a maxDist]"
-  $stderr.puts " --do :  default 0: "
+  $stderr.puts "Usage: ruby __.rb -i InputDir -r Reference.bfa [-b batchSize] [ --do 0] [-n maxMismatch] [-a maxDist] [-z]"
+  $stderr.puts " --do    default 0: "
   $stderr.puts "         0  execute Maq on local machine one by one in a loop"
   $stderr.puts "         1  write qsub shell scripts for mapping through Maq"
   $stderr.puts "         2  write a bsub shell script for mapping through Maq"
-  $stderr.puts "\n -b  batchSize, default 1000000 reads per batch"
+  $stderr.puts "\n -b     batchSize, default 1000000 reads per batch"
+  $stderr.puts "\n -z     just do maq mapping, assuming the split step has been completed"
 end
 # see if maq is avaible
 def tryMaq
