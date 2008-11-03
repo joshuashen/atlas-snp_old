@@ -23,7 +23,7 @@
 
 #used by BreakFile, Solexa2Fastq and RunMaq
 use File::Basename;
-use Switch;
+## use Switch;
 use Getopt::Long;
 use vars qw /$opt_chr $opt_start $opt_end $opt_maxQual $opt_help $opt_maxMis $opt_maxDist/;
 
@@ -155,11 +155,14 @@ sub BreakFile($File1 $File2 $OutputDir)  {
 		open (OUT2, ">$_[2]$name2.$nChunks.txt") or die "Can't open output file $_[2]$name2.$nChunks.txt";
             }
 
-	    switch ($switch)  {
-		case "1"  {$return = (&FilterByChrom($l1, $l2) && &FilterByPosition($l1, $l2, $opt_start, $opt_end))}
-		case "2"  {$return = &FilterByChrom($l1, $l2)}
-		case "3"  {$return = &FilterByPosition($l1, $l2, $opt_start, $opt_end)}
-		case "4"  {$return = 1}
+	    if ($switch == 1 )  {
+		$return = (&FilterByChrom($l1, $l2) && &FilterByPosition($l1, $l2, $opt_start, $opt_end));
+	    } elsif ($switch == 2) {
+		$return = &FilterByChrom($l1, $l2);
+	    } elsif ($switch == 3) {
+		$return = &FilterByPosition($l1, $l2, $opt_start, $opt_end);
+	    } elsif ($switch == 4) {
+		$return = 1;
 	    }
 
 	    if ($return)  {

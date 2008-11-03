@@ -1,0 +1,175 @@
+
+# Author: Yufeng "Joshua" Shen
+# convert solexa export file to fastq, and split into batches, each with 4 million lines 
+# (thus 1 million reads)
+
+require 'getoptlong'
+
+$maq = ''
+def main 
+  # logic of the program
+  maq = tryMaq()
+  if (maq == false)
+    exit
+  else
+    $maq = File.expand_path(maq)
+  end
+
+  optHash = getOptions() ## "--inputDir"
+    
+  if optHash.key?("--help") 
+    help()
+    exit
+  end
+
+# maxMismatch, maxDist
+  if optHash.key?("--maxMismatch")
+    maxMismatch = optHash["--maxMismatch"].to_i
+  else
+    maxMismatch = 3
+  end
+
+  if optHash.key?("--maxDist")
+    maxDist = optHash["--maxDist"].to_i
+  else
+    maxDist = 300
+  end
+
+  if optHash.key?("--batchSize")
+    batchSize = optHash["--batchSize"]
+  else
+    batchSize = "1000000"
+  end
+
+  absInputPath = File.expand_path(optHash["--inputDir"])
+  absOutputPath = File.dirname(absInputPath) + "/Mapping_of_" + File.basename(absInputPath)
+  if !File.exist?(absOutputPath)
+    system("mkdir #{absOutputPath}")
+  end
+  $stderr.puts "convert Solexa export files into fastq files \nand split into smaller batches..."
+#   export2fastqAndDivide(absInputPath, absOutputPath, batchSize)
+
+  if optHash.key?("--do") 
+    if optHash["--do"] == "1" # write qsub scripts
+      flag = 1
+    elsif optHash["--do"] == "2"  # write a bsub script
+      flag = 2
+    else
+      flag = 0  # do in a loop locally
+    end
+  else
+    flag = 0
+  end
+
+  ref = File.expand_path(optHash["--ref"])
+  if !optHash["--ref"].match("bfa$") 
+    system("#{$maq} fasta2bfa #{ref} #{ref}.bfa")
+    ref = ref + '.bfa'
+  end
+
+  log = 'maq_log.txt'
+  pairedEndMapping(absOutputPath, ref, flag, log, maxMismatch, maxDist)
+  
+end
+
+def getOptions 
+  opts = GetoptLong.new(
+      ["--inputDir", "-i", GetoptLong::REQUIRED_ARGUMENT],
+      ["--ref", "-r", GetoptLong::REQUIRED_ARGUMENT],
+      ["--maxMismatch", "-n", GetoptLong::OPTIONAL_ARGUMENT],
+      ["--maxDist", "-a", GetoptLong::OPTIONAL_ARGUMENT],
+      ["--batchSize", "-b", GetoptLong::OPTIONAL_ARGUMENT],
+      ["--do", "-d", GetoptLong::OPTIONAL_ARGUMENT],
+      ["--help", "-h", GetoptLong::NO_ARGUMENT]
+  )
+
+  optHash = {}
+  opts.each do |opt, arg|
+    optHash[opt] = arg
+  end
+  return optHash
+end
+
+def help 
+  $stderr.puts "Usage: ruby __.rb -i InputDir -r Reference.bfa [-b batchSize] [ --do 0] [-n maxMismatch] [-a maxDist]"
+  $stderr.puts " --do :  default 0: "
+  $stderr.puts "         0  execute Maq on local machine one by one in a loop"
+  $stderr.puts "         1  write qsub shell scripts for mapping through Maq"
+  $stderr.puts "         2  write a bsub shell script for mapping through Maq"
+  $stderr.puts "\n -b  batchSize, default 1000000 reads per batch"
+end
+# see if maq is avaible
+def tryMaq
+  trymaq = `which maq`
+  if trymaq == '' # maq not found
+    $stderr.puts "Failed to find Maq. Please make sure Maq is installed and you have put the path to Maq in $PATH of your shell environment"
+    return false
+  else
+    return trymaq.chomp
+  end
+end
+
+def export2fastqAndDivide(input, output, batchSize)
+# get the file names
+  files = Dir.entries(input).sort.select {|file| file.match("export.txt$") }
+
+
+  files.each do |file|
+    $stderr.puts "work on #{file}.."
+    absFile = input + "/" + file
+    absOutPrefix = output + '/' + file + "_"
+    cmd = %q[awk '{print "@"$1":"$2":"$3":"$4":"$5"/"$6"\n"$7"\n+\n"$8}'] +  " #{absFile} " + %q[ | split -d -l ] + " #{batchSize} - #{absOutPrefix}" 
+    system(cmd)
+    batches = Dir.entries(output).sort.select {|batch| batch.match(file) and !batch.match("bfq") and !batch.match("fastq")}
+    batches.each do |batch|
+      batchabs = output + '/' + batch
+      fastq = batchabs + ".fastq"
+      bfq = batchabs + ".bfq"
+      solexa2MaqFastq(batchabs, fastq)
+      fastq2bfq(fastq, bfq)
+      File.delete(batchabs)
+    end
+  end
+end
+
+
+def solexa2MaqFastq(sf, mf)
+  system("#{$maq} sol2sanger #{sf} #{mf}")
+end
+
+def fastq2bfq(f,b)
+  system("#{$maq} fastq2bfq #{f} #{b} 2> /dev/null")
+end
+
+def pairedEndMapping(dir, ref, flag, log, maxMismatch, maxDist)
+  # find pairs of bfq files, do maq
+  bfqsFreads = Dir.entries(dir).sort.select {|file| file.match("bfq$") and file.match('_1_export')}
+  
+  bfqsFreads.each do |fReads|
+    rReads = fReads.tr('_1_export', '_2_export')
+    r1 = dir + '/' + fReads
+    r2 = dir + '/' + rReads
+    mapresult = r1 + '.map'
+    if File.exist?(r2)
+      maqstring = "#{$maq} map  -n #{maxMismatch} -a #{maxDist}  #{mapresult}  #{ref} #{r1} #{r2} 2 >> #{log}"
+    end
+    
+    if flag == 0 ## do locally
+      $stderr.puts maqstring
+      system(maqstring)
+    elsif flag == 1 ## qsub
+      shstring = '#!/bin/sh' + "\n" + '#$ -cwd' + "\n" + maqstring
+
+      shf = File.new(r1+".sh", "w")
+      shf.puts shstring
+      shf.close
+      system("qsub #{r1}.sh ")
+
+    elsif flag == 2 # bsub
+      system("bsub -o lsf.o -e lsf.e #{maqstring}")
+    end
+  end
+  return
+end
+
+main()    # do
