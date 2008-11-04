@@ -36,9 +36,9 @@ def main
   end
 
   if optHash.key?("--batchSize")
-    batchSize = optHash["--batchSize"]
+    batchSize = optHash["--batchSize"].to_i * 4
   else
-    batchSize = "1000000"
+    batchSize = 4000000
   end
 
   absInputPath = File.expand_path(optHash["--inputDir"])
@@ -178,7 +178,7 @@ def pairedEndMapping(dir, ref, flag, log, maxMismatch, maxDist)
       shf = File.new(r1+".sh", "w")
       shf.puts shstring
       shf.close
-      #       system("qsub #{r1}.sh -e #{errorLog} -o #{stdoutlog}")
+      system("qsub #{r1}.sh -e #{errorLog} -o #{stdoutlog}")
       
     elsif flag == 2 # bsub
       system("bsub -o #{stdoutlog} -e #{errorLog} #{maqstring}")
