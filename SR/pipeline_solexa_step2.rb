@@ -17,7 +17,7 @@ system("maq assemble #{prefix}.cns #{ref} #{prefix}.map 2> #{prefix}.cns.log")
 system("maq cns2snp #{prefix}.cns > #{prefix}.cns.SNP")
 
 # pileup
-system("maq pileup -sP #{ref} #{prefix}.map > #{prefix}.pileup")
+system("maq pileup -sp #{ref} #{prefix}.map > #{prefix}.pileup")
 
 # mapview
 system("maq mapview -bN #{prefix}.map > #{prefix}.map.mapview")
