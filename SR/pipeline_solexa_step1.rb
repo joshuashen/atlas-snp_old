@@ -127,7 +127,7 @@ def export2fastqAndDivide(input, output, batchSize)
     $stderr.puts "work on #{file}.."
     absFile = input + "/" + file
     absOutPrefix = output + '/' + file + "_"
-    cmd = %q[awk '{print "@"$1":"$2":"$3":"$4":"$5"/"$6"\n"$7"\n+\n"$8}'] +  " #{absFile} " + %q[ | split -d -l ] + " #{batchSize} - #{absOutPrefix}" 
+    cmd = %q[awk '{print "@"$1":"$2":"$3":"$4":"$5"/"$6"\n"$7"\n+\n"$8}'] +  " #{absFile} " + %q[ | split -l ] + " #{batchSize} - #{absOutPrefix}" 
     system(cmd)
     batches = Dir.entries(output).sort.select {|batch| batch.match(file) and !batch.match("bfq") and !batch.match("fastq")}
     batches.each do |batch|
