@@ -38,7 +38,7 @@ def main
   if optHash.key?("--batchSize")
     batchSize = optHash["--batchSize"].to_i * 4
   else
-    batchSize = 4000000
+    batchSize = 2000000  # default 500,000 reads per batch
   end
 
   absInputPath = File.expand_path(optHash["--inputDir"])
