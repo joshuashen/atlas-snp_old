@@ -1,15 +1,45 @@
-$dir = ARGV[0]
-$ref = ARGV[1]
 $maq = File.expand_path(`which maq`.chomp)
 
+require 'getoptlong'
+
 def main
-  dir = $dir
-  ref = $ref
+  optHash = getoptions()
+  if optHash.key?("--help") 
+    help()
+    exit
+  end
+
+  dir = optHash["--dir"]
+  ref = optHash["--ref"]
   flag = 1
   log = "Maq.log"
   maxMismatch = 3
   maxDist = 250
+##   pe = findPairedEnds(dir)
   pairedEndMapping(dir, ref, flag, log, maxMismatch, maxDist)
+end
+
+def help
+  $stderr.puts "Usage: ruby __.rb -d dir -r ref.bfa"
+end
+
+def getoptions
+  opts = GetoptLong.new(
+                        ["--dir", "-d", GetoptLong::REQUIRED_ARGUMENT],
+                        ["--ref", "-r", GetoptLong::REQUIRED_ARGUMENT],
+                        ["--help", "-h", GetoptLong::NO_ARGUMENT]
+                        )
+  optHash={}
+  opts.each do |opt,arg|
+    optHash[opt] = arg
+  end
+  return optHash
+
+end
+
+def findPairedEnds(list)
+  return
+
 end
 
 def pairedEndMapping(dir, ref, flag, log, maxMismatch, maxDist)

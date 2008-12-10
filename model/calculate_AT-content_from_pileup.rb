@@ -16,7 +16,7 @@ def main
   File.new(p,'r').each do |line|
     cols = line.split(/\s+/)
     base = {}
-    base[:pos], base[:rbase], base[:cov] = cols[1], cols[2], cols[3]
+    base[:ref], base[:pos], base[:rbase], base[:cov] = cols[0], cols[1], cols[2], cols[3]
     base[:at] = 0.5
     $window << base
     $bases[base[:rbase]] += 1
@@ -26,7 +26,7 @@ def main
       $head = $window.shift
       $bases[$head[:rbase]] -= 1
       base[:at] = (100 * ( $bases['A'] + $bases['T'] ) / $wsize.to_f).round/100.0 # update AT content, only keep two decimals
-      puts "#{$head[:pos]}\t#{$head[:rbase]}\t#{$head[:cov]}\t#{$head[:at]}"
+      puts "#{$head[:ref]}\t#{$head[:pos]}\t#{$head[:rbase]}\t#{$head[:cov]}\t#{$head[:at]}"
     end
   end
 end
