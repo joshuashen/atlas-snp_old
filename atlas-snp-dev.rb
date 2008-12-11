@@ -1,8 +1,11 @@
 # input: cross_match -discrep_lists output and the reference sequence
 # output:  raw SNP list with relevant information
 
-# some part modified from Lei Chen's program
-# only do substitutions
+# Author: Yufeng "Joshua" Shen
+# Dec, 2008
+# 
+# What's new: 
+#    (perhaps) less memory usage
 
 
 require 'getoptlong'
@@ -69,6 +72,26 @@ def setOptions(optHash)
     $options[:minscore] = optHash["--minscore"].to_f
   end
 end
+
+def initiate(optHash)
+  ref = ''
+  File.new(optHash["--reference"], 'r').each do |line|
+    if line=~ /^>(\S+)/
+      ref = $1
+      $seq[ref] = ''
+      $snp[ref] = {}
+    else
+      $seq[ref] << line.chomp
+    end
+  end
+  
+  # initiate $coverage
+  $seq.each_key do |ref|
+    #  $stderr.puts ref
+    $coverage[ref] = Array.new($seq[ref].size + 1) {|i|  0}
+  end
+end
+
   
 def compute(name, ref, span, snps)
   return if span.length < 1
@@ -148,25 +171,6 @@ def homocount(str)
     xx = 1
   end
   return xx
-end
-
-def initiate(optHash)
-  ref = ''
-  File.new(optHash["--reference"], 'r').each do |line|
-    if line=~ /^>(\S+)/
-      ref = $1
-      $seq[ref] = ''
-      $snp[ref] = {}
-    else
-      $seq[ref] << line.chomp
-    end
-  end
-  
-  # initiate $coverage
-  $seq.each_key do |ref|
-    #  $stderr.puts ref
-    $coverage[ref] = Array.new($seq[ref].size + 1) {|i|  0}
-  end
 end
 
 def scan(optHash)
