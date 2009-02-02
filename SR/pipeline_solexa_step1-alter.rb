@@ -174,12 +174,13 @@ def pairedEndMapping(dir, ref, flag, log, maxMismatch, maxDist)
     if flag == 0 ## do locally
       $stderr.puts maqstring
       system(maqstring)
-    elsif flag == 1 ## qsub
+    elsif flag == 1 ## qsub  , need to replace @ 
       shstring = '#!/bin/sh' + "\n" + '#$ -cwd' + "\n" + maqstring
-
+      r1.tr!('@', '_')
       shf = File.new(r1+".sh", "w")
       shf.puts shstring
       shf.close
+      
       system("qsub #{r1}.sh -e #{errorLog} -o #{stdoutlog}")
       
     elsif flag == 2 # bsub
