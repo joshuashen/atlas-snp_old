@@ -153,10 +153,10 @@ end
 
 def pairedEndMapping(dir, ref, flag, log, maxMismatch, maxDist)
   # find pairs of bfq files, do maq
-  bfqsFreads = Dir.entries(dir).sort.select {|file| file.match("bfq$") and file.match('_1.fastq')}
+  bfqsFreads = Dir.entries(dir).sort.select {|file| file.match("bfq$") and file.match('1.fastq')}
   
   bfqsFreads.each do |fReads|
-    rReads = fReads.sub("_1.fastq", "_2.fastq")
+    rReads = fReads.sub("1.fastq", "2.fastq")
     r1 = dir + '/' + fReads
     r2 = dir + '/' + rReads
     errorLog = r1 + '.stderr_log'
