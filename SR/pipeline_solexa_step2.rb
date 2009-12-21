@@ -11,10 +11,10 @@ maps = ARGV[2..-1].join("\t")   ## all the .map files, DIR/s*.map would do
 system("maq mapmerge #{prefix}.map #{maps}")
 
 # assemble
-system("maq assemble #{prefix}.cns #{ref} #{prefix}.map 2> #{prefix}.cns.log")
+# system("maq assemble #{prefix}.cns #{ref} #{prefix}.map 2> #{prefix}.cns.log")
 
 # call SNP
-system("maq cns2snp #{prefix}.cns > #{prefix}.cns.SNP")
+# system("maq cns2snp #{prefix}.cns > #{prefix}.cns.SNP")
 
 # pileup
 system("maq pileup -sp #{ref} #{prefix}.map > #{prefix}.pileup")
